@@ -1,34 +1,150 @@
-# Finora — the financial OS for autonomous agents
+<div align="center">
 
-Fintech track submission for Innova Hack Chapter-1. Finora gives AI agents
-a verifiable identity, a real-time reputation score, dynamically
-underwritten credit, and a wallet-layer kill switch that works even when
-the agent doesn't cooperate.
+# Finora
 
-## What's here
+### The financial operating system for autonomous agents
 
-- **`/` (this folder)** — the Next.js marketing site + interactive console
-  (Home, Live Console, Security, Pricing, Docs, About).
-- **`/onchain`** — the real enforcement layer: a Solidity smart wallet
-  (`AgentWallet.sol`) enforcing per-tx limits, a rolling daily cap, a
-  counterparty allowlist, an owner kill switch, and in-flight revocation —
-  with a 17-test suite and a scripted attack-agent demo. See
-  [`onchain/README.md`](onchain/README.md).
+Verifiable identity · real-time reputation · dynamically underwritten credit · a wallet-layer kill switch that works even when the agent doesn't cooperate.
 
-## Running the site
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white)](https://soliditylang.org)
+[![Hardhat](https://img.shields.io/badge/Hardhat-tests%2017%2F17-FFF04D?logo=hardhat&logoColor=black)](onchain)
+[![License](https://img.shields.io/badge/license-MIT-informational)](#license)
+
+Built for **Innova Hack Chapter-1**, Domain 1 — Fintech.
+
+</div>
+
+---
+
+## The problem
+
+AI agents are already buying compute, placing orders, and executing trades — but the financial system was built for humans and corporations who can pledge collateral, sign a contract, and be held accountable. An agent can do none of that.
+
+That breaks two things at once:
+
+| | |
+|---|---|
+| **No identity, no credit** | Agents that could complete valuable work are stuck waiting on funds they have no way to borrow. |
+| **No leash, no control** | Once an agent holds a wallet, "be careful" isn't a control — most spend limits live inside the agent's own logic, which a compromised or overzealous agent can simply ignore. |
+
+Finora is the layer underneath both problems: identity and reputation to make credit possible, and policy enforcement that lives **outside** the agent's own reasoning to make that credit safe.
+
+## Preview
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/home.png" alt="Finora landing page" /></td>
+<td width="50%"><img src="docs/screenshots/console.png" alt="Live agent console" /></td>
+</tr>
+<tr>
+<td align="center"><sub>Marketing site — light, premium theme</sub></td>
+<td align="center"><sub>Live console — dark "product panel" contrast</sub></td>
+</tr>
+</table>
+
+## What's real here
+
+This isn't a slide deck. Two things actually run:
+
+1. **The site** — a full Next.js app: Home, a live interactive console, Security, Pricing, Docs, About.
+2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 17-test suite and a scripted attack-agent demo that runs real attacks against a real EVM and prints the actual revert reasons.
+
+```bash
+cd onchain && npm install && npm run demo:attack
+```
+
+```
+[2] Attack: agent tries to pay an address that was never allowlisted.
+✓ BLOCKED — pay unlisted address
+            reason: reverted with custom error 'NotAllowlisted(...)'
+
+[5] Owner freezes the agent mid-sequence — after a payment is proposed, before it executes.
+  step 1/2 — proposePayment() succeeded (payment is now pending)
+  ⚠ owner.pause() called — kill switch engaged
+✓ BLOCKED — execute the already-proposed payment after the freeze
+            reason: reverted with custom error 'ContractPaused()'
+            → in-flight revocation confirmed: no funds moved
+```
+
+## How it works
+
+```mermaid
+flowchart TD
+    A["Identity Layer<br/>DID issuance · owner binding · non-transferable agent keys"] --> B
+    B["Reputation Engine<br/>task success rate · spend pattern · refund ratio"] --> C
+    C["Credit / Policy Engine<br/>dynamic limit + APR · one policy object for credit AND spend"] --> D
+    D["Wallet Enforcement Layer<br/>allowlist · spend caps · in-flight revocation"] --> E
+    E["Audit & Monitoring<br/>anomaly detection · immutable log · owner alerts"]
+```
+
+The same policy object that decides how much an agent can borrow is the one that enforces how much it can spend — there's no gap between "approved to borrow" and "allowed to spend."
+
+## Feature highlights
+
+- **Agent identity (DID)** — a verifiable, non-transferable link between an agent and the human or org that authorized it
+- **Reputation engine** — underwriting from task success rate, spend discipline, and refund ratio, with no credit history required
+- **Dynamic credit line** — limit and APR recalculated in real time, not fixed at onboarding
+- **Wallet-layer enforcement** — spend caps and counterparty allowlists enforced independent of the agent's own logic
+- **Instant kill switch** — one owner action freezes the agent, including in-flight, multi-step transactions
+- **Programmatic auto-repayment** — loan balance is deducted automatically when a task's revenue lands
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Framer Motion |
+| Enforcement contract | Solidity 0.8.24, Hardhat, ethers v6, TypeChain |
+| Testing | Mocha/Chai via Hardhat (17 tests), `tsc --noEmit`, `next build` |
+
+## Project structure
+
+```
+Finora/
+├─ src/
+│  ├─ app/                 routes: /, /console, /security, /pricing, /docs, /about
+│  └─ components/
+│     ├─ console/          the interactive credit + kill-switch demo (client state)
+│     └─ ui/                shared layout primitives
+├─ onchain/
+│  ├─ contracts/AgentWallet.sol
+│  ├─ test/AgentWallet.test.ts       17 tests: ownership, limits, allowlist, kill switch, in-flight revocation
+│  └─ scripts/
+│     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit
+│     └─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
+└─ docs/screenshots/
+```
+
+## Getting started
+
+**Site**
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Running the on-chain layer
+**On-chain layer**
 
 ```bash
 cd onchain
 npm install
 npm test              # 17 passing
-npm run demo:attack   # scripted attack agent vs. the contract, live reverts
+npm run demo:attack   # scripted attack agent, live EVM reverts
 ```
+
+Deploying to a public testnet (Base Sepolia) needs a funded burner wallet — see [`onchain/README.md`](onchain/README.md).
+
+## Known gaps
+
+Being upfront about what's simulated vs. real:
+
+- The interactive console on the site runs its own state machine — it does **not** yet call the deployed contract. The contract is proven independently via its test suite and attack script.
+- No public testnet deployment yet (by choice, to keep the demo reliable during judging).
+- The "agent" is scripted/state-driven, not an actual tool-calling LLM.
+- Anomaly detection in the console is a fixed score adjustment, not a trained model.
+
+## License
+
+MIT
