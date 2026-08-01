@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HeroTerminal } from "./HeroTerminal";
 
 export function Hero() {
@@ -21,12 +22,12 @@ export function Hero() {
             wallet-layer kill switch that works even when the agent doesn&apos;t cooperate.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <a
-              href="#console"
-              className="glow-accent rounded-full bg-accent px-6 py-3 text-sm font-semibold text-background transition-transform hover:scale-[1.03]"
+            <Link
+              href="/console"
+              className="glow-accent rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
             >
               Launch Live Console →
-            </a>
+            </Link>
             <a
               href="#how-it-works"
               className="rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-muted"

@@ -1,6 +1,24 @@
 @import "tailwindcss";
 
 :root {
+  --background: #fafaf8;
+  --surface: #ffffff;
+  --surface-2: #f3f4f1;
+  --border: #e7e7e2;
+  --foreground: #14181f;
+  --muted: #6b7076;
+  --accent: #059669;
+  --accent-2: #4338ca;
+  --violet: #7c3aed;
+  --danger: #dc2626;
+  --warning: #b45309;
+  --shadow-tint: 15, 23, 42;
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-inter);
+}
+
+.dark-scope {
   --background: #06070a;
   --surface: #0b0d13;
   --surface-2: #10131b;
@@ -12,9 +30,7 @@
   --violet: #a78bfa;
   --danger: #ff5c6c;
   --warning: #ffb85c;
-  --font-display: var(--font-space-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
-  --font-sans: var(--font-inter);
+  --shadow-tint: 0, 0, 0;
 }
 
 @theme inline {
@@ -47,14 +63,26 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   background-image:
-    radial-gradient(1200px 600px at 15% -10%, rgba(125, 255, 179, 0.08), transparent 60%),
-    radial-gradient(1000px 500px at 90% 0%, rgba(110, 168, 255, 0.10), transparent 55%),
-    radial-gradient(800px 400px at 50% 100%, rgba(167, 139, 250, 0.08), transparent 60%);
+    radial-gradient(1100px 550px at 12% -10%, rgba(5, 150, 105, 0.07), transparent 60%),
+    radial-gradient(900px 480px at 92% 0%, rgba(67, 56, 202, 0.06), transparent 55%),
+    radial-gradient(700px 380px at 50% 100%, rgba(124, 58, 237, 0.05), transparent 60%);
   background-attachment: fixed;
+}
+
+.dark-scope {
+  background: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(1200px 600px at 15% -10%, rgba(125, 255, 179, 0.08), transparent 60%),
+    radial-gradient(1000px 500px at 90% 0%, rgba(110, 168, 255, 0.1), transparent 55%),
+    radial-gradient(800px 400px at 50% 100%, rgba(167, 139, 250, 0.08), transparent 60%);
 }
 
 ::selection {
   background: var(--accent);
+  color: var(--background);
+}
+.dark-scope ::selection {
   color: #06070a;
 }
 
@@ -79,32 +107,57 @@ body {
 
 .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
   background-size: 42px 42px;
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
 }
+.dark-scope .grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+.card-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(var(--shadow-tint), 0.04), 0 12px 28px -14px rgba(var(--shadow-tint), 0.12);
+}
 
 .glass {
-  background: rgba(16, 19, 27, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
+.dark-scope .glass {
+  background: rgba(16, 19, 27, 0.6);
+}
 
 .glow-accent {
+  box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.16), 0 16px 40px -14px rgba(5, 150, 105, 0.4);
+}
+.dark-scope .glow-accent {
   box-shadow: 0 0 0 1px rgba(125, 255, 179, 0.15), 0 0 40px -10px rgba(125, 255, 179, 0.35);
 }
 
 .glow-danger {
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.18), 0 16px 40px -14px rgba(220, 38, 38, 0.35);
+}
+.dark-scope .glow-danger {
   box-shadow: 0 0 0 1px rgba(255, 92, 108, 0.25), 0 0 40px -8px rgba(255, 92, 108, 0.45);
 }
 
 .text-gradient {
-  background: linear-gradient(90deg, #7dffb3 0%, #6ea8ff 50%, #a78bfa 100%);
+  background: linear-gradient(90deg, #059669 0%, #4338ca 60%, #7c3aed 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+.dark-scope .text-gradient {
+  background: linear-gradient(90deg, #7dffb3 0%, #6ea8ff 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 @keyframes scan {

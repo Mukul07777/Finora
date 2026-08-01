@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "#problem", label: "Problem" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#console", label: "Live Console" },
-  { href: "#metrics", label: "Why it holds up" },
+  { href: "/console", label: "Live Console" },
+  { href: "/security", label: "Security" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/docs", label: "Docs" },
+  { href: "/about", label: "About" },
 ];
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -26,31 +30,38 @@ export function Nav() {
       }`}
     >
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 sm:px-8">
-        <a href="#top" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-accent-2 font-display text-sm font-bold text-background">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-accent-2 font-display text-sm font-bold text-white">
             F
           </span>
-          <span className="font-display text-lg font-semibold tracking-tight">Finora</span>
-        </a>
+          <span className="font-display text-lg font-semibold tracking-tight text-foreground">
+            Finora
+          </span>
+        </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {LINKS.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              {l.label}
-            </a>
-          ))}
+        <nav className="hidden items-center gap-7 md:flex">
+          {LINKS.map((l) => {
+            const active = pathname === l.href;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`text-sm transition-colors ${
+                  active ? "font-medium text-foreground" : "text-muted hover:text-foreground"
+                }`}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <a
-          href="#console"
+        <Link
+          href="/console"
           className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-transform hover:scale-[1.03]"
         >
           Launch Console
-        </a>
+        </Link>
       </div>
     </header>
   );

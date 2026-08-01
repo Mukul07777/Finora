@@ -47,7 +47,7 @@ export function HeroTerminal() {
   }, []);
 
   return (
-    <div className="glass glow-accent relative w-full max-w-md overflow-hidden rounded-2xl border border-border">
+    <div className="dark-scope glass glow-accent relative w-full max-w-md overflow-hidden rounded-2xl border border-border">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />
         <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />

@@ -9,7 +9,9 @@ export function ConsoleSection() {
       title="A live, clickable console — not a mockup"
       description="Request credit, spend against it, try to break the rules, and pull the kill switch. Every panel below reacts in real time."
     >
-      <Console />
+      <div className="dark-scope rounded-3xl border border-border p-4 sm:p-8">
+        <Console />
+      </div>
     </Section>
   );
 }
