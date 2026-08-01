@@ -36,6 +36,7 @@ interface FinoraActions {
   simulateRogue: () => void;
   toggleFreeze: () => void;
   completeJob: () => void;
+  updatePolicy: (perTxCap: number) => void;
 }
 
 const FinoraStateContext = createContext<FinoraState | null>(null);
@@ -126,7 +127,7 @@ export function FinoraProvider({
             id: nextId("notif"),
             tone: "warn",
             title: "Payment blocked",
-            body: `₹${result.amount.toLocaleString("en-IN")} exceeded available credit`,
+            body: result.reason ?? `₹${result.amount.toLocaleString("en-IN")} blocked by policy`,
             time: timeNow(),
           },
         });
@@ -263,9 +264,21 @@ export function FinoraProvider({
     }
   }, [adapter]);
 
+  const updatePolicy = useCallback(
+    async (perTxCap: number) => {
+      try {
+        await adapter.updatePolicy(perTxCap, controllerRef.current!.signal);
+        dispatch({ type: "POLICY_UPDATED", perTxCap });
+      } catch (err) {
+        if (!isAbortError(err)) throw err;
+      }
+    },
+    [adapter]
+  );
+
   const actions = useMemo<FinoraActions>(
-    () => ({ requestCredit, sendPayment, simulateRogue, toggleFreeze, completeJob }),
-    [requestCredit, sendPayment, simulateRogue, toggleFreeze, completeJob]
+    () => ({ requestCredit, sendPayment, simulateRogue, toggleFreeze, completeJob, updatePolicy }),
+    [requestCredit, sendPayment, simulateRogue, toggleFreeze, completeJob, updatePolicy]
   );
 
   return (

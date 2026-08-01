@@ -32,9 +32,14 @@ export interface FinoraState {
   limit: number;
   apr: number;
   balance: number;
+  /** Owner-set ceiling on any single payment — the simulated analog of AgentWallet.sol's perTxLimit, live-adjustable via PolicyPanel. */
+  perTxCap: number;
   txs: Tx[];
   notifications: Notification[];
 }
 
 export const ALLOWLIST = ["api.compute.gpu", "vendor.data-feed", "cloud.storage.us"] as const;
 export const UNDERWRITING_STEPS = 4;
+export const MIN_PER_TX_CAP = 100;
+export const MAX_PER_TX_CAP = 1000;
+export const DEFAULT_PER_TX_CAP = 500;

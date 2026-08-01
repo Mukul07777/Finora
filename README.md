@@ -87,6 +87,7 @@ The same policy object that decides how much an agent can borrow is the one that
 - **Reputation engine** — underwriting from task success rate, spend discipline, and refund ratio, with no credit history required
 - **Dynamic credit line** — limit and APR recalculated in real time, not fixed at onboarding
 - **Wallet-layer enforcement** — spend caps and counterparty allowlists enforced independent of the agent's own logic
+- **Live owner policy controls** — the per-transaction cap is adjustable in real time from either surface (console or phone), enforced on the agent's very next payment attempt — the same rule as `perTxLimit` in `AgentWallet.sol`, not fixed at deployment
 - **Instant kill switch** — one owner action freezes the agent, including in-flight, multi-step transactions
 - **Programmatic auto-repayment** — loan balance is deducted automatically when a task's revenue lands
 

@@ -48,6 +48,8 @@ export interface FinoraAdapter {
   attemptRoguePayment(state: FinoraState, signal?: AbortSignal): Promise<PaymentAttempt>;
   toggleFreeze(state: FinoraState, signal?: AbortSignal): Promise<FreezeResult>;
   completeJob(state: FinoraState, signal?: AbortSignal): Promise<JobCompletion>;
+  /** Owner sets a new per-transaction cap — the simulated analog of AgentWallet.sol's setPolicy(). */
+  updatePolicy(perTxCap: number, signal?: AbortSignal): Promise<void>;
 }
 
 export function isAbortError(err: unknown): boolean {

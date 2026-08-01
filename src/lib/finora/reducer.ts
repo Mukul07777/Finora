@@ -1,5 +1,5 @@
 import { computeCreditTerms } from "./scoring";
-import { FinoraState, Notification, Tx } from "./types";
+import { DEFAULT_PER_TX_CAP, FinoraState, MAX_PER_TX_CAP, MIN_PER_TX_CAP, Notification, Tx } from "./types";
 
 export type FinoraAction =
   | { type: "CREDIT_REQUEST_STARTED" }
@@ -10,7 +10,8 @@ export type FinoraAction =
   | { type: "PAYMENT_SETTLED"; id: string; amount: number }
   | { type: "ROGUE_BLOCKED"; tx: Tx; notification: Notification; scoreDelta: number }
   | { type: "FREEZE_TOGGLED"; notification: Notification }
-  | { type: "JOB_COMPLETED"; tx: Tx; notification: Notification };
+  | { type: "JOB_COMPLETED"; tx: Tx; notification: Notification }
+  | { type: "POLICY_UPDATED"; perTxCap: number };
 
 export const initialFinoraState: FinoraState = {
   frozen: false,
@@ -20,6 +21,7 @@ export const initialFinoraState: FinoraState = {
   limit: 0,
   apr: 0,
   balance: 0,
+  perTxCap: DEFAULT_PER_TX_CAP,
   txs: [],
   notifications: [],
 };
@@ -142,6 +144,9 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
         notifications: pushNotification(state.notifications, action.notification),
       };
     }
+
+    case "POLICY_UPDATED":
+      return { ...state, perTxCap: Math.min(MAX_PER_TX_CAP, Math.max(MIN_PER_TX_CAP, action.perTxCap)) };
 
     default:
       return assertNever(action);

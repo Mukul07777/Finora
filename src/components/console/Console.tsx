@@ -6,6 +6,7 @@ import { CreditPanel } from "./CreditPanel";
 import { WalletPanel } from "./WalletPanel";
 import { TxFeed } from "./TxFeed";
 import { KillSwitchCard } from "./KillSwitchCard";
+import { PolicyPanel } from "./PolicyPanel";
 import { AlertBanner } from "./AlertBanner";
 import { AlertMsg } from "./types";
 import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
@@ -59,6 +60,7 @@ export function Console() {
             onSendPayment={actions.sendPayment}
             onSimulateRogue={actions.simulateRogue}
           />
+          <PolicyPanel perTxCap={state.perTxCap} onChange={actions.updatePolicy} />
         </div>
 
         <div className="lg:col-span-1">

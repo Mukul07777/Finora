@@ -22,7 +22,7 @@ import {
 import { ScoreGauge } from "./ScoreGauge";
 import type { PhoneNotif, Tx } from "./types";
 import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
-import type { CreditStatus } from "@/lib/finora/types";
+import { MAX_PER_TX_CAP, MIN_PER_TX_CAP, type CreditStatus } from "@/lib/finora/types";
 
 type Tab = "home" | "activity" | "alerts" | "agent";
 
@@ -66,7 +66,7 @@ const NOTIF_RING: Record<PhoneNotif["tone"], string> = {
 export function PhoneApp() {
   const state = useFinoraState();
   const actions = useFinoraActions();
-  const { frozen, score, creditStatus, limit, apr, balance, txs } = state;
+  const { frozen, score, creditStatus, limit, apr, balance, txs, perTxCap } = state;
   const underwriting = creditStatus === ("underwriting" as CreditStatus);
 
   const [tab, setTab] = useState<Tab>("home");
@@ -190,7 +190,9 @@ export function PhoneApp() {
                 )}
                 {tab === "activity" && <ActivityScreen txs={txs} />}
                 {tab === "alerts" && <AlertsScreen notifs={notifs} />}
-                {tab === "agent" && <AgentScreen score={score} tier={tier} />}
+                {tab === "agent" && (
+                  <AgentScreen score={score} tier={tier} perTxCap={perTxCap} onUpdatePolicy={actions.updatePolicy} />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -409,7 +411,17 @@ function AlertsScreen({ notifs }: { notifs: PhoneNotif[] }) {
   );
 }
 
-function AgentScreen({ score, tier }: { score: number; tier: string }) {
+function AgentScreen({
+  score,
+  tier,
+  perTxCap,
+  onUpdatePolicy,
+}: {
+  score: number;
+  tier: string;
+  perTxCap: number;
+  onUpdatePolicy: (perTxCap: number) => void;
+}) {
   return (
     <div className="space-y-3 pb-4 pt-1">
       <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">Agent Passport</div>
@@ -424,6 +436,23 @@ function AgentScreen({ score, tier }: { score: number; tier: string }) {
         <Row label="Tasks completed" value="482" />
         <Row label="Success rate" value="98.2%" />
         <Row label="Refund ratio" value="0.4%" />
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
+        <div className="mb-2 flex items-center justify-between text-[10.5px]">
+          <span className="uppercase tracking-wide text-white/50">Owner: per-tx cap</span>
+          <span className="font-mono text-white">₹{perTxCap.toLocaleString("en-IN")}</span>
+        </div>
+        <input
+          type="range"
+          min={MIN_PER_TX_CAP}
+          max={MAX_PER_TX_CAP}
+          step={50}
+          value={perTxCap}
+          onChange={(e) => onUpdatePolicy(Number(e.target.value))}
+          aria-label="Per-transaction spend cap"
+          className="w-full accent-emerald-400"
+        />
       </div>
     </div>
   );

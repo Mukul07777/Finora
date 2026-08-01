@@ -22,6 +22,17 @@ export function evaluatePayment(state: FinoraState): PaymentAttempt {
   const amount = Math.round(80 + Math.random() * 370);
   const remaining = state.limit - state.balance;
 
+  // Mirrors AgentWallet.sol's check order: per-tx cap first, then
+  // remaining headroom — same two independent reasons a real payment
+  // can revert on-chain.
+  if (amount > state.perTxCap) {
+    return {
+      merchant,
+      amount,
+      allowed: false,
+      reason: `Blocked — exceeds owner-set per-transaction cap (₹${state.perTxCap.toLocaleString("en-IN")})`,
+    };
+  }
   if (amount > remaining) {
     return { merchant, amount, allowed: false, reason: "Blocked — exceeds available credit headroom" };
   }
@@ -71,6 +82,12 @@ export const simulationAdapter: FinoraAdapter = {
     await delay(0, signal);
     const result: FreezeResult = { willFreeze: !state.frozen };
     return result;
+  },
+
+  async updatePolicy(_perTxCap, signal) {
+    // Instant here; a real OnchainAdapter's setPolicy() would be an
+    // owner-signed transaction and would actually need to await it.
+    await delay(0, signal);
   },
 
   async completeJob(state, signal) {

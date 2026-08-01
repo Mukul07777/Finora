@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { finoraReducer, initialFinoraState } from "./reducer";
 import { computeCreditTerms } from "./scoring";
-import { Notification, Tx } from "./types";
+import { MAX_PER_TX_CAP, MIN_PER_TX_CAP, Notification, Tx } from "./types";
 
 const notif: Notification = { id: "n1", tone: "ok", title: "t", body: "b", time: "00:00:00" };
 const tx: Tx = {
@@ -119,5 +119,18 @@ describe("finoraReducer", () => {
     expect(s.balance).toBe(0);
     expect(s.txs).toHaveLength(1);
     expect(s.notifications).toHaveLength(1);
+  });
+
+  it("updates the per-transaction cap within bounds", () => {
+    const s = finoraReducer(initialFinoraState, { type: "POLICY_UPDATED", perTxCap: 750 });
+    expect(s.perTxCap).toBe(750);
+  });
+
+  it("clamps an out-of-range per-transaction cap instead of accepting it verbatim", () => {
+    const tooLow = finoraReducer(initialFinoraState, { type: "POLICY_UPDATED", perTxCap: 10 });
+    expect(tooLow.perTxCap).toBe(MIN_PER_TX_CAP);
+
+    const tooHigh = finoraReducer(initialFinoraState, { type: "POLICY_UPDATED", perTxCap: 5000 });
+    expect(tooHigh.perTxCap).toBe(MAX_PER_TX_CAP);
   });
 });

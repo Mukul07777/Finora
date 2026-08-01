@@ -37,4 +37,19 @@ describe("evaluatePayment", () => {
     expect(result.allowed).toBe(true);
     expect(result.reason).toBeUndefined();
   });
+
+  it("blocks the payment when it exceeds the owner-set per-transaction cap, even with ample headroom", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.9); // amount ~413
+    const result = evaluatePayment(stateWith({ limit: 50_000, balance: 0, perTxCap: 200 }));
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/per-transaction cap/i);
+  });
+
+  it("checks the per-tx cap before headroom, so the cap reason wins when both would block", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.9); // amount ~413
+    const result = evaluatePayment(stateWith({ limit: 500, balance: 470, perTxCap: 200 })); // only 30 remaining AND over cap
+
+    expect(result.reason).toMatch(/per-transaction cap/i);
+  });
 });
