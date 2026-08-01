@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate Hardhat/Mocha workspace with its own tooling — not part of
+    // the Next.js app, same exclusion as the root tsconfig.json.
+    "onchain/**",
   ]),
 ]);
 

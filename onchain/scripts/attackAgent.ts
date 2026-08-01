@@ -18,8 +18,9 @@ async function expectRevert(label: string, fn: () => Promise<unknown>) {
   try {
     await fn();
     console.log(`✗ UNEXPECTED: "${label}" should have reverted but succeeded.`);
-  } catch (err: any) {
-    const reason = err.shortMessage || err.message || String(err);
+  } catch (err: unknown) {
+    const e = err as { shortMessage?: string; message?: string };
+    const reason = e.shortMessage || e.message || String(err);
     console.log(`✓ BLOCKED  — ${label}\n            reason: ${reason}`);
   }
 }

@@ -76,6 +76,10 @@ export function PhoneApp() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Placeholder "--:--" is rendered on mount (matches SSR) to avoid a
+    // hydration mismatch against the server's clock; corrected here once
+    // mounted, same pattern as ThemeToggle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setClock(timeNow());
     const clockId = setInterval(() => setClock(timeNow()), 30000);
     return () => clearInterval(clockId);
@@ -83,10 +87,12 @@ export function PhoneApp() {
 
   // Mirrors shared notifications into this screen's own list + toast —
   // presentation only, the underlying agent state lives in FinoraProvider.
+  // An effect because it schedules a real toast-dismiss timeout.
   useEffect(() => {
     const latest = state.notifications[0];
     if (!latest) return;
     const notif: PhoneNotif = { id: latest.id, title: latest.title, body: latest.body, tone: latest.tone };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotifs((prev) => (prev[0]?.id === notif.id ? prev : [notif, ...prev].slice(0, 20)));
     setToast(notif);
     if (toastTimer.current) clearTimeout(toastTimer.current);

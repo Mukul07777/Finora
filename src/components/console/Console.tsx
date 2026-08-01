@@ -17,10 +17,14 @@ export function Console() {
   const actions = useFinoraActions();
   const [alert, setAlert] = useState<AlertMsg | null>(null);
 
-  // Surfaces the most recent shared notification as a self-dismissing banner.
+  // Surfaces the most recent shared notification as a self-dismissing
+  // banner. Deliberately an effect, not a render-time derivation: it
+  // schedules a real timeout to auto-dismiss, which can't happen during
+  // render.
   useEffect(() => {
     const latest = state.notifications[0];
     if (!latest) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAlert({ id: latest.id, tone: latest.tone, text: latest.body || latest.title });
     const t = setTimeout(() => {
       setAlert((cur) => (cur?.id === latest.id ? null : cur));

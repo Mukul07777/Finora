@@ -39,8 +39,8 @@ Finora is the layer underneath both problems: identity and reputation to make cr
 <td width="50%"><img src="docs/screenshots/console.png" alt="Live agent console" /></td>
 </tr>
 <tr>
-<td align="center"><sub>Marketing site — light, premium theme</sub></td>
-<td align="center"><sub>Live console — dark "product panel" contrast</sub></td>
+<td align="center"><sub>Marketing site — dark by default, light/dark toggle in the nav</sub></td>
+<td align="center"><sub>Live console — same theme, "product panel" contrast</sub></td>
 </tr>
 </table>
 
@@ -67,6 +67,18 @@ cd onchain && npm install && npm run demo:attack
             reason: reverted with custom error 'ContractPaused()'
             → in-flight revocation confirmed: no funds moved
 ```
+
+## For judges — the fastest path through it
+
+Everything below is clickable in under two minutes at `/console`:
+
+1. **Request credit.** Watch the underwriting steps run, then note the limit/APR — computed from the agent's score (`computeCreditTerms`), not hardcoded.
+2. **Send a payment, watch it go `pending`.** It's a real two-step lifecycle (propose → settle), mirroring `proposePayment()`/`executePayment()` on-chain — not an instant approve/reject.
+3. **Send another payment, then hit the kill switch while it's still pending.** The exact in-flight transaction gets cancelled — ₹0 moved — the same in-flight revocation proven in the Solidity test suite, reproduced live in the browser.
+4. **Drag the per-transaction cap slider down, then try to pay.** The next payment blocks with the new cap as the stated reason.
+5. **Do the same from the phone below the console** — it's the same agent, same `FinoraProvider` instance. Freeze it from the phone; watch the console above freeze too.
+6. **Click "Simulate rogue spend" a few times quickly.** The assessed risk in the alert changes each time — it's computed from actual transaction velocity, not a fixed number — and the credit terms visibly worsen.
+7. **Then go to `/security`** and run `cd onchain && npm run demo:attack` — the same policy rules, enforced by real Solidity, with real revert reasons, including a live reentrancy attack that fails.
 
 ## How it works
 

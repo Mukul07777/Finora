@@ -21,16 +21,22 @@ export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Close the mobile menu on route change — adjusted during render
+  // rather than in an effect (React's documented pattern for resetting
+  // state when a prop changes), so there's no extra render tick where
+  // the menu is still open on the new page.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMenuOpen(false);
+  }
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   return (
     <header

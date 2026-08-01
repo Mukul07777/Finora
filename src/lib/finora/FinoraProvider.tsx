@@ -9,6 +9,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import { finoraReducer, initialFinoraState } from "./reducer";
 import { FinoraAdapter, isAbortError } from "./adapter";
@@ -65,26 +66,28 @@ export function FinoraProvider({
   const [state, dispatch] = useReducer(finoraReducer, initialFinoraState);
 
   // Async action callbacks close over stale state on the render they were
-  // created in; stateRef always reflects the latest state instead.
+  // created in; stateRef always reflects the latest state instead. Synced
+  // in an effect (runs after every commit) rather than during render.
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => {
+    stateRef.current = state;
+  });
 
   // One AbortController for the provider's lifetime — every in-flight
   // adapter call is cancelled on unmount instead of dispatching into a
-  // torn-down tree.
-  const controllerRef = useRef<AbortController | null>(null);
-  if (!controllerRef.current) controllerRef.current = new AbortController();
-
+  // torn-down tree. Lazy useState initializer instead of a ref so it's
+  // created exactly once without touching a ref during render.
+  const [controller] = useState(() => new AbortController());
   useEffect(() => {
-    return () => controllerRef.current?.abort();
-  }, []);
+    return () => controller.abort();
+  }, [controller]);
 
   const requestCredit = useCallback(async () => {
     if (stateRef.current.creditStatus !== "idle") return;
     dispatch({ type: "CREDIT_REQUEST_STARTED" });
 
     try {
-      const signal = controllerRef.current!.signal;
+      const signal = controller.signal;
       await adapter.requestCredit((step) => dispatch({ type: "CREDIT_UNDERWRITING_STEP", step }), signal);
 
       // Terms are computed by the reducer from current score — mirror that
@@ -104,14 +107,14 @@ export function FinoraProvider({
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
-  }, [adapter]);
+  }, [adapter, controller]);
 
   const sendPayment = useCallback(async () => {
     const s = stateRef.current;
     if (s.frozen || s.creditStatus !== "approved") return;
 
     try {
-      const result = await adapter.attemptPayment(s, controllerRef.current!.signal);
+      const result = await adapter.attemptPayment(s, controller.signal);
 
       if (!result.allowed) {
         dispatch({
@@ -170,7 +173,7 @@ export function FinoraProvider({
       });
       dispatch({ type: "PAYMENT_PROPOSED", tx: pendingTx });
 
-      await adapter.settlePayment(controllerRef.current!.signal);
+      await adapter.settlePayment(controller.signal);
 
       // Re-check frozen state now, at settlement time, not proposal time
       // — matches executePayment()'s whenNotPaused check. If the owner
@@ -183,14 +186,14 @@ export function FinoraProvider({
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
-  }, [adapter]);
+  }, [adapter, controller]);
 
   const simulateRogue = useCallback(async () => {
     const s = stateRef.current;
     if (s.frozen || s.creditStatus !== "approved") return;
 
     try {
-      const result = await adapter.attemptRoguePayment(s, controllerRef.current!.signal);
+      const result = await adapter.attemptRoguePayment(s, controller.signal);
       const risk = result.risk ?? 0.6;
       dispatch({
         type: "ROGUE_BLOCKED",
@@ -213,12 +216,12 @@ export function FinoraProvider({
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
-  }, [adapter]);
+  }, [adapter, controller]);
 
   const toggleFreeze = useCallback(async () => {
     try {
       const s = stateRef.current;
-      const result = await adapter.toggleFreeze(s, controllerRef.current!.signal);
+      const result = await adapter.toggleFreeze(s, controller.signal);
       const willFreeze = result.willFreeze;
 
       dispatch({
@@ -234,14 +237,14 @@ export function FinoraProvider({
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
-  }, [adapter]);
+  }, [adapter, controller]);
 
   const completeJob = useCallback(async () => {
     const s = stateRef.current;
     if (s.frozen || s.balance <= 0) return;
 
     try {
-      const result = await adapter.completeJob(s, controllerRef.current!.signal);
+      const result = await adapter.completeJob(s, controller.signal);
       dispatch({
         type: "JOB_COMPLETED",
         tx: buildTx({
@@ -262,18 +265,18 @@ export function FinoraProvider({
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
-  }, [adapter]);
+  }, [adapter, controller]);
 
   const updatePolicy = useCallback(
     async (perTxCap: number) => {
       try {
-        await adapter.updatePolicy(perTxCap, controllerRef.current!.signal);
+        await adapter.updatePolicy(perTxCap, controller.signal);
         dispatch({ type: "POLICY_UPDATED", perTxCap });
       } catch (err) {
         if (!isAbortError(err)) throw err;
       }
     },
-    [adapter]
+    [adapter, controller]
   );
 
   const actions = useMemo<FinoraActions>(
