@@ -11,6 +11,7 @@
   --accent: #7dffb3;
   --accent-2: #6ea8ff;
   --violet: #a78bfa;
+  --magenta: #ff6fd8;
   --danger: #ff5c6c;
   --warning: #ffb85c;
   --on-accent: #06070a;
@@ -31,6 +32,7 @@
   --accent: #059669;
   --accent-2: #4338ca;
   --violet: #7c3aed;
+  --magenta: #db2777;
   --danger: #dc2626;
   --warning: #b45309;
   --on-accent: #ffffff;
@@ -50,6 +52,7 @@
   --accent: #7dffb3;
   --accent-2: #6ea8ff;
   --violet: #a78bfa;
+  --magenta: #ff6fd8;
   --danger: #ff5c6c;
   --warning: #ffb85c;
   --on-accent: #06070a;
@@ -67,6 +70,7 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-violet: var(--violet);
+  --color-magenta: var(--magenta);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-on-accent: var(--on-accent);
