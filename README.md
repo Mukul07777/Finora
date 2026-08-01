@@ -130,7 +130,7 @@ Finora/
 │     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit
 │     └─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
 ├─ docs/screenshots/
-└─ run.bat                 Windows one-click menu: run the site / onchain tests / attack demo
+└─ run.bat                 Windows one-click: installs deps, starts the dev server, opens the browser
 ```
 
 ## Getting started
@@ -141,7 +141,7 @@ Finora/
 run.bat
 ```
 
-Installs dependencies if needed and gives you a menu: run the site, run the on-chain test suite, or run the attack demo.
+Installs dependencies if needed, starts the dev server, and opens `http://localhost:3000` in your browser.
 
 **Site**
 
