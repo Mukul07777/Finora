@@ -54,41 +54,76 @@ export default function SecurityPage() {
       <Metrics />
 
       <Section
-        eyebrow="Roadmap"
-        title="What ships on-chain next"
-        description="The console demonstrates the policy model end-to-end in a controlled environment. Production enforcement moves the same logic on-chain, where it can't be bypassed even by us."
+        eyebrow="Shipped, not just described"
+        title="The on-chain enforcement layer is real code"
+        description="AgentWallet.sol is a working Solidity contract with a 17-test suite and a scripted attack agent — not a diagram. It lives in this repo's /onchain folder."
       >
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
-              <GitBranch size={18} strokeWidth={1.75} />
-            </span>
-            <h3 className="font-display text-base font-semibold text-foreground">
-              Session-key smart wallet
-            </h3>
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="rounded-2xl border border-border bg-surface p-8">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
+                <GitBranch size={18} strokeWidth={1.75} />
+              </span>
+              <h3 className="font-display text-base font-semibold text-foreground">
+                AgentWallet.sol — session-key smart wallet
+              </h3>
+            </div>
+            <ul className="space-y-3 text-sm leading-relaxed text-muted">
+              <li>
+                <span className="font-medium text-foreground">Session key, not owner key</span> —
+                the agent address is a settable, revocable session key. It can never call the
+                owner-only functions (policy, allowlist, pause, withdraw).
+              </li>
+              <li>
+                <span className="font-medium text-foreground">On-chain policy checks</span> — per-tx
+                cap, rolling daily cap, and allowlist are each a custom-error revert inside the
+                contract (<code className="font-mono text-foreground">ExceedsPerTxLimit</code>,{" "}
+                <code className="font-mono text-foreground">ExceedsDailyLimit</code>,{" "}
+                <code className="font-mono text-foreground">NotAllowlisted</code>) — not application
+                logic that depends on a backend staying honest.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Real in-flight revocation</span> —
+                <code className="font-mono text-foreground"> proposePayment()</code> and{" "}
+                <code className="font-mono text-foreground">executePayment()</code> are separate
+                transactions. A test proves that calling{" "}
+                <code className="font-mono text-foreground">pause()</code> between them makes the
+                second step revert, even though the first step already succeeded on-chain.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">17/17 tests passing</span> — ownership,
+                direct payments, the kill switch, in-flight revocation, and funds custody are each
+                covered in <code className="font-mono text-foreground">onchain/test/AgentWallet.test.ts</code>.
+              </li>
+            </ul>
           </div>
-          <ul className="space-y-3 text-sm leading-relaxed text-muted">
-            <li>
-              <span className="font-medium text-foreground">Account abstraction (ERC-4337) or Safe modules</span> —
-              the agent never holds the owner key. It holds a scoped session key with an expiry,
-              a spend cap, and an allowlist encoded directly into the permission.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">On-chain policy checks</span> — every
-              spend/allowlist/limit rule becomes a <code className="font-mono text-foreground">require()</code>{" "}
-              in the wallet contract, so enforcement doesn&apos;t depend on our backend staying honest.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Multi-step in-flight revocation</span> —
-              structuring a payment as approve → execute means a freeze between steps reverts the
-              remainder, giving real in-flight revocation without needing to interrupt a mined transaction.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Gasless freeze via relayer</span> — the
-              kill switch stays usable even if the owner&apos;s wallet is out of gas at the worst
-              possible moment.
-            </li>
-          </ul>
+
+          <div className="dark-scope overflow-hidden rounded-2xl border border-border">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
+              <span className="ml-2 font-mono text-xs text-muted">npm run demo:attack</span>
+            </div>
+            <pre className="overflow-x-auto px-5 py-5 font-mono text-[12px] leading-relaxed text-foreground">
+{`[2] Attack: agent tries to pay an address that was never allowlisted.
+✓ BLOCKED — pay unlisted address
+            reason: reverted with custom error 'NotAllowlisted(...)'
+
+[5] Owner freezes the agent mid-sequence — after a payment is
+    proposed, before it executes.
+  step 1/2 — proposePayment() succeeded (payment is now pending)
+  ⚠ owner.pause() called — kill switch engaged
+✓ BLOCKED — execute the already-proposed payment after the freeze
+            reason: reverted with custom error 'ContractPaused()'
+            → in-flight revocation confirmed: no funds moved`}
+            </pre>
+          </div>
+
+          <p className="text-center text-xs text-muted">
+            Full output, deployment script, and Base Sepolia testnet instructions in{" "}
+            <code className="font-mono text-foreground">onchain/README.md</code>.
+          </p>
         </div>
       </Section>
 

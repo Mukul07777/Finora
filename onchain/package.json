@@ -1,0 +1,20 @@
+{
+  "name": "finora-onchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Session-key smart wallet: spend limits, allowlist, owner kill switch, in-flight revocation.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "demo:attack": "hardhat run scripts/attackAgent.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.10",
+    "typescript": "^5.5.4"
+  }
+}
