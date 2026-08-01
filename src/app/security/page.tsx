@@ -98,6 +98,12 @@ export default function SecurityPage() {
             </ul>
           </div>
 
+          <p className="text-sm leading-relaxed text-muted">
+            The attack demo below runs on an in-memory Hardhat EVM and verifies real Solidity
+            behavior — it requires no deployment, funds, or network. No public testnet deployment
+            currently exists; that&apos;s the next step, not a claim made here.
+          </p>
+
           <div className="dark-scope overflow-hidden rounded-2xl border border-border">
             <div className="flex items-center gap-2 border-b border-border px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />

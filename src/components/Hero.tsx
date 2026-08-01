@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { HeroTerminal } from "./HeroTerminal";
-import { CountUp } from "./ui/CountUp";
 import { ParticleMesh } from "./ui/ParticleMesh";
 
 const container = {
@@ -83,19 +81,11 @@ export function Hero() {
 
           <motion.div
             variants={item}
-            className="mt-14 grid grid-cols-3 gap-6 border-t border-border pt-8 sm:max-w-lg"
+            className="mt-14 flex flex-col gap-3 border-t border-border pt-8 sm:max-w-lg"
           >
-            <Stat value={<CountUp value={96} suffix="%" />} label="predicted repayment" />
-            <Stat
-              value={
-                <>
-                  &lt;
-                  <CountUp value={80} suffix="ms" />
-                </>
-              }
-              label="policy enforcement"
-            />
-            <Stat value={<CountUp value={0} />} label="signed contracts needed" />
+            <Capability text="Policy enforced outside the agent" />
+            <Capability text="Owner-controlled emergency pause" />
+            <Capability text="In-flight payment revocation" />
           </motion.div>
         </div>
 
@@ -113,11 +103,11 @@ export function Hero() {
   );
 }
 
-function Stat({ value, label }: { value: ReactNode; label: string }) {
+function Capability({ text }: { text: string }) {
   return (
-    <div>
-      <div className="font-display text-2xl font-semibold text-foreground">{value}</div>
-      <div className="mt-1 text-xs text-muted">{label}</div>
+    <div className="flex items-center gap-2.5 text-sm text-foreground">
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+      {text}
     </div>
   );
 }

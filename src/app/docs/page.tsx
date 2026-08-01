@@ -50,9 +50,12 @@ export default function DocsPage() {
     <div className="pt-10">
       <Section
         eyebrow="Developers"
-        title="A small, opinionated API"
+        title="Planned API — Not Currently Live"
         description="Identity, underwriting, and wallet enforcement as a handful of endpoints — designed to be called by an agent's own tool layer."
       >
+        <div className="mx-auto mb-10 max-w-2xl rounded-2xl border border-border bg-surface px-5 py-4 text-sm leading-relaxed text-muted">
+          This describes the API&apos;s intended shape. No backend is deployed — <code className="font-mono text-foreground">api.finora.dev</code> does not resolve, and the request below will not succeed if you run it. The endpoints mirror what the live console already does in-browser (see <code className="font-mono text-foreground">/console</code>), which is the accurate place to see this behavior working today.
+        </div>
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
           <div className="overflow-hidden rounded-2xl border border-border bg-surface">
             {ENDPOINTS.map((e, idx) => (

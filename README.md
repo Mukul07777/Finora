@@ -49,7 +49,7 @@ Finora is the layer underneath both problems: identity and reputation to make cr
 This isn't a slide deck. Two things actually run:
 
 1. **The site** — a full Next.js app: Home, a live interactive console, Security, Pricing, Docs, About.
-2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 17-test suite and a scripted attack-agent demo that runs real attacks against a real EVM and prints the actual revert reasons.
+2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 17-test suite and a scripted attack-agent demo that runs real attacks against an in-memory Hardhat EVM (real Solidity execution, no deployment or network required) and prints the actual revert reasons.
 
 ```bash
 cd onchain && npm install && npm run demo:attack
@@ -136,14 +136,23 @@ npm run demo:attack   # scripted attack agent, live EVM reverts
 
 Deploying to a public testnet (Base Sepolia) needs a funded burner wallet — see [`onchain/README.md`](onchain/README.md).
 
-## Known gaps
+## Real vs. simulated
 
-Being upfront about what's simulated vs. real:
+Every claim above, checked against what actually runs:
 
-- The interactive console on the site runs its own state machine — it does **not** yet call the deployed contract. The contract is proven independently via its test suite and attack script.
-- No public testnet deployment yet (by choice, to keep the demo reliable during judging).
-- The "agent" is scripted/state-driven, not an actual tool-calling LLM.
-- Anomaly detection in the console is a fixed score adjustment, not a trained model.
+| Claim | Status | Detail |
+|---|---|---|
+| On-chain enforcement logic (limits, allowlist, pause, in-flight revocation) | **Real** | `AgentWallet.sol`, 17/17 tests passing, run it yourself in `/onchain` |
+| Attack demo reverts | **Real** | Real Solidity execution on an in-memory Hardhat EVM — not a deployed testnet contract |
+| Console/phone credit, spend, kill-switch flows | **Simulated** | In-browser React state (`FinoraProvider`), no blockchain call. Labeled "Simulation Mode" in the UI |
+| "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |
+| REST API (`/docs`) | **Not live** | Describes the planned API shape; `api.finora.dev` does not resolve |
+| Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable during judging — see `onchain/README.md` for how to deploy it |
+| Reputation score / underwriting numbers | **Hardcoded** | Fixed demo values (e.g. score 82, ₹8,200 @ 14.2%), not calculated from real signals |
+| The "agent" | **Scripted** | State-driven UI logic, not a tool-calling LLM |
+| Anomaly detection | **Fixed adjustment** | A hardcoded score delta on the rogue-spend demo action, not a trained model |
+
+Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Planned API — Not Currently Live") match this table.
 
 ## License
 
