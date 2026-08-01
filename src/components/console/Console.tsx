@@ -7,6 +7,7 @@ import { WalletPanel } from "./WalletPanel";
 import { TxFeed } from "./TxFeed";
 import { KillSwitchCard } from "./KillSwitchCard";
 import { PolicyPanel } from "./PolicyPanel";
+import { AgentAutopilot } from "./AgentAutopilot";
 import { AlertBanner } from "./AlertBanner";
 import { AlertMsg } from "./types";
 import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
@@ -41,6 +42,7 @@ export function Console() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
           <AgentPassport frozen={state.frozen} score={state.score} tier={tier} />
+          <AgentAutopilot />
           <KillSwitchCard frozen={state.frozen} onToggle={actions.toggleFreeze} />
         </div>
 

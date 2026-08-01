@@ -102,6 +102,7 @@ The same policy object that decides how much an agent can borrow is the one that
 - **Live owner policy controls** — the per-transaction cap is adjustable in real time from either surface (console or phone), enforced on the agent's very next payment attempt — the same rule as `perTxLimit` in `AgentWallet.sol`, not fixed at deployment
 - **Instant kill switch** — one owner action freezes the agent, including in-flight, multi-step transactions
 - **Programmatic auto-repayment** — loan balance is deducted automatically when a task's revenue lands
+- **Agent Autopilot (optional)** — a real LLM (Groq) can drive the agent's decisions instead of a human clicking buttons, through the same policy path — see [Real LLM agent](#real-llm-agent-optional) below
 
 ## Tech stack
 
@@ -110,6 +111,7 @@ The same policy object that decides how much an agent can borrow is the one that
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Framer Motion |
 | Shared state | `FinoraProvider` — a `useReducer` store with a pure reducer + async action coordinator, single source of truth for the console and phone demos |
 | Backend seam | `FinoraAdapter` interface, currently backed by `simulationAdapter` (timers + randomness). Swappable for a future on-chain adapter without touching the reducer or any component |
+| Optional LLM agent | Groq (`llama-3.1-8b-instant` by default), called server-side only from `app/api/agent/decide` |
 | Enforcement contract | Solidity 0.8.24, Hardhat, ethers v6, TypeChain |
 | Testing | Mocha/Chai via Hardhat (24 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
 
@@ -120,8 +122,10 @@ Finora/
 ├─ src/
 │  ├─ app/                 routes: /, /console, /security, /pricing, /docs, /about
 │  ├─ lib/finora/          shared agent state: pure reducer + FinoraProvider + FinoraAdapter (+ Vitest tests)
+│  ├─ app/api/agent/decide/ server route that calls Groq — the only place the API key is used
 │  └─ components/
 │     ├─ console/          Console (desktop) & PhoneApp (mobile) — two views of one FinoraProvider
+│     │                     (includes AgentAutopilot.tsx — the optional LLM-driven mode)
 │     └─ ui/                shared layout primitives
 ├─ onchain/
 │  ├─ contracts/AgentWallet.sol
@@ -162,6 +166,31 @@ npm run demo:attack   # scripted attack agent, live EVM reverts
 
 Deploying to a public testnet (Base Sepolia) needs a funded burner wallet — see [`onchain/README.md`](onchain/README.md).
 
+## Real LLM agent (optional)
+
+`/console` has an **Agent Autopilot** toggle. Turned on, it stops waiting for you to click
+buttons — a real model decides the agent's next move (request credit, spend, repay, or wait)
+every few seconds, with its one-sentence reasoning shown live. It calls a server route, never
+the browser directly, so the API key never reaches the client:
+
+```bash
+cp .env.example .env.local
+# then edit .env.local:
+GROQ_API_KEY=your_key_here   # free key: https://console.groq.com/keys
+```
+
+Restart `npm run dev` after adding the key. Two things worth knowing:
+
+- **The model decides; it does not enforce.** Every action it picks goes through the identical
+  `FinoraProvider` action path a human click would — request credit still checks
+  `creditStatus === "idle"`, a payment still gets policy-checked and can still be blocked or
+  frozen mid-flight. Autopilot can't bypass anything a human couldn't.
+- **Capped by design.** Stops itself after 12 actions per session (`AUTOPILOT_MAX_ACTIONS` in
+  `src/lib/finora/autopilot.ts`) so a forgotten toggle doesn't run up API usage.
+
+Without a key configured, the toggle still renders — clicking it shows a clear inline message
+instead of failing silently or crashing the page.
+
 ## Real vs. simulated
 
 Every claim above, checked against what actually runs:
@@ -177,7 +206,7 @@ Every claim above, checked against what actually runs:
 | Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable during judging — see `onchain/README.md` for how to deploy it |
 | Starting reputation score | **Seeded** | Every session starts at score 82 — a bootstrap value, since there's no real history yet |
 | Credit limit / APR | **Computed** | `computeCreditTerms(score)` — a real formula, recalculated live whenever score changes (job completions, rogue attempts), not fixed once at approval |
-| The "agent" | **Scripted** | State-driven UI logic, not a tool-calling LLM |
+| The "agent" | **Scripted by default; real LLM in opt-in Autopilot** | `/console` has an "Agent Autopilot" toggle — a Groq model genuinely decides the next action (request credit / spend / repay / wait) every few seconds via `/api/agent/decide`. Its decisions go through the exact same policy checks as a human clicking the buttons. Off by default; needs `GROQ_API_KEY` |
 | Anomaly / velocity risk | **Heuristic, computed** | `computeVelocityRisk()` derives a risk value from this session's actual transaction timestamps (more recent activity → higher risk) — hand-tuned, not a trained model, but not a fixed number either |
 
 Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Planned API — Not Currently Live") match this table.
