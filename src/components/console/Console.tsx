@@ -7,10 +7,12 @@ import { WalletPanel } from "./WalletPanel";
 import { TxFeed } from "./TxFeed";
 import { KillSwitchCard } from "./KillSwitchCard";
 import { AlertBanner } from "./AlertBanner";
-import { AlertMsg, CreditStatus, Tx } from "./types";
+import { PhoneMock } from "./PhoneMock";
+import { AlertMsg, CreditStatus, PhoneNotif, Tx } from "./types";
 
 const ALLOWLIST = ["api.compute.gpu", "vendor.data-feed", "cloud.storage.us"];
 const UNDERWRITING_STEPS = 4;
+const PHONE_NOTIF_TTL = 6000;
 
 function timeNow() {
   return new Date().toLocaleTimeString("en-IN", { hour12: false });
@@ -32,6 +34,7 @@ export function Console() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Tx[]>([]);
   const [alert, setAlert] = useState<AlertMsg | null>(null);
+  const [phoneNotifs, setPhoneNotifs] = useState<PhoneNotif[]>([]);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -54,6 +57,15 @@ export function Console() {
     setTxs((prev) => [{ ...tx, id: nextId(), time: timeNow() }, ...prev].slice(0, 12));
   }
 
+  function pushPhone(title: string, body: string, tone: PhoneNotif["tone"]) {
+    const id = nextId();
+    setPhoneNotifs((prev) => [{ id, title, body, tone }, ...prev].slice(0, 4));
+    const t = setTimeout(() => {
+      setPhoneNotifs((prev) => prev.filter((n) => n.id !== id));
+    }, PHONE_NOTIF_TTL);
+    timers.current.push(t);
+  }
+
   function handleRequestCredit() {
     if (creditStatus !== "idle") return;
     setCreditStatus("underwriting");
@@ -67,6 +79,7 @@ export function Console() {
       setLimit(8200);
       setApr(14.2);
       setAlert({ id: nextId(), tone: "ok", text: "Credit approved — ₹8,200 line at 14.2% APR" });
+      pushPhone("Credit approved", "₹8,200 line issued to agent.procure-01 at 14.2% APR", "ok");
     }, (UNDERWRITING_STEPS + 1) * 650);
     timers.current.push(done);
   }
@@ -86,6 +99,7 @@ export function Console() {
         note: "Blocked — exceeds available credit headroom",
       });
       setAlert({ id: nextId(), tone: "warn", text: "Payment blocked — over available limit" });
+      pushPhone("Payment blocked", `₹${amount.toLocaleString("en-IN")} attempt exceeded available credit`, "warn");
       return;
     }
 
@@ -114,6 +128,11 @@ export function Console() {
       tone: "danger",
       text: "Anomaly detected — spend velocity spike (risk 0.91)",
     });
+    pushPhone(
+      "Security alert",
+      "Blocked ₹4,000 attempt to an unlisted wallet — risk score spiked to 0.91",
+      "danger"
+    );
   }
 
   function handleToggleFreeze() {
@@ -131,9 +150,15 @@ export function Console() {
         tone: "danger",
         text: "Agent frozen — all pending & future transactions cancelled",
       });
+      pushPhone(
+        "Agent frozen",
+        "agent.procure-01 stopped instantly. All pending & future transactions cancelled.",
+        "danger"
+      );
     } else {
       setFrozen(false);
       setAlert({ id: nextId(), tone: "ok", text: "Agent reinstated — policies re-armed" });
+      pushPhone("Agent reinstated", "agent.procure-01 is back online — policies re-armed", "ok");
     }
   }
 
@@ -147,15 +172,17 @@ export function Console() {
       status: "repayment",
       note: `Auto-repaid outstanding balance of ₹${balance.toLocaleString("en-IN")}`,
     });
+    const repaid = balance;
     setBalance(0);
     setScore((s) => Math.min(99, s + 2));
     setAlert({ id: nextId(), tone: "ok", text: "Loan auto-repaid — reputation score updated" });
+    pushPhone("Loan repaid", `₹${repaid.toLocaleString("en-IN")} auto-deducted from task revenue — balance ₹0`, "ok");
   }
 
   return (
     <div>
       <AlertBanner alert={alert} />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-4">
         <div className="space-y-6 lg:col-span-1">
           <AgentPassport frozen={frozen} score={score} tier={tier} />
           <KillSwitchCard frozen={frozen} onToggle={handleToggleFreeze} />
@@ -185,6 +212,12 @@ export function Console() {
 
         <div className="lg:col-span-1">
           <TxFeed txs={txs} />
+        </div>
+
+        <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-24">
+            <PhoneMock notifs={phoneNotifs} />
+          </div>
         </div>
       </div>
     </div>
