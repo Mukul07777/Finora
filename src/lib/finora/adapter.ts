@@ -35,7 +35,16 @@ export interface FinoraAdapter {
    * the reducer, not decided by the adapter.
    */
   requestCredit(onStep: (step: number) => void, signal?: AbortSignal): Promise<void>;
+  /** Policy check only — matches AgentWallet.sol's proposePayment(), which reverts synchronously if allowlist/limit checks fail, before any pending state exists. */
   attemptPayment(state: FinoraState, signal?: AbortSignal): Promise<PaymentAttempt>;
+  /**
+   * The settlement window for a proposed-and-passed payment — matches
+   * the gap between proposePayment() and executePayment() on-chain,
+   * during which pause() can still stop it. The coordinator re-checks
+   * frozen state itself once this resolves; this call just represents
+   * that time passing.
+   */
+  settlePayment(signal?: AbortSignal): Promise<void>;
   attemptRoguePayment(state: FinoraState, signal?: AbortSignal): Promise<PaymentAttempt>;
   toggleFreeze(state: FinoraState, signal?: AbortSignal): Promise<FreezeResult>;
   completeJob(state: FinoraState, signal?: AbortSignal): Promise<JobCompletion>;

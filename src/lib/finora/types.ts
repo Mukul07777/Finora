@@ -1,4 +1,4 @@
-export type TxStatus = "approved" | "blocked" | "cancelled" | "repayment";
+export type TxStatus = "pending" | "approved" | "blocked" | "cancelled" | "repayment";
 
 export interface Tx {
   id: string;

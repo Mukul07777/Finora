@@ -33,10 +33,20 @@ describe("finoraReducer", () => {
     expect(s.notifications).toHaveLength(1);
   });
 
-  it("increases balance on an approved payment", () => {
-    const s = finoraReducer(initialFinoraState, { type: "PAYMENT_APPROVED", tx, amount: 100 });
-    expect(s.balance).toBe(100);
-    expect(s.txs[0]).toBe(tx);
+  it("proposes a payment as pending without moving balance yet", () => {
+    const pending: Tx = { ...tx, status: "pending" };
+    const s = finoraReducer(initialFinoraState, { type: "PAYMENT_PROPOSED", tx: pending });
+    expect(s.balance).toBe(0);
+    expect(s.txs[0].status).toBe("pending");
+  });
+
+  it("settles a pending payment: moves balance and flips its status to approved", () => {
+    const pending: Tx = { ...tx, status: "pending" };
+    const proposed = finoraReducer(initialFinoraState, { type: "PAYMENT_PROPOSED", tx: pending });
+    const settled = finoraReducer(proposed, { type: "PAYMENT_SETTLED", id: pending.id, amount: 100 });
+
+    expect(settled.balance).toBe(100);
+    expect(settled.txs[0].status).toBe("approved");
   });
 
   it("docks score by the given scoreDelta on a rogue-spend block", () => {
@@ -72,14 +82,29 @@ describe("finoraReducer", () => {
     expect(s.apr).toBe(0);
   });
 
-  it("toggles frozen and cancels an in-flight tx only when freezing", () => {
-    const frozen = finoraReducer(initialFinoraState, { type: "FREEZE_TOGGLED", tx, notification: notif });
+  it("toggles frozen without touching txs when nothing is pending", () => {
+    const frozen = finoraReducer(initialFinoraState, { type: "FREEZE_TOGGLED", notification: notif });
     expect(frozen.frozen).toBe(true);
-    expect(frozen.txs).toHaveLength(1);
+    expect(frozen.txs).toHaveLength(0);
 
-    const reinstated = finoraReducer(frozen, { type: "FREEZE_TOGGLED", tx: null, notification: notif });
+    const reinstated = finoraReducer(frozen, { type: "FREEZE_TOGGLED", notification: notif });
     expect(reinstated.frozen).toBe(false);
-    expect(reinstated.txs).toHaveLength(1); // no new tx appended on reinstate
+  });
+
+  it("cancels a real pending payment when the owner freezes mid-settlement", () => {
+    const pending: Tx = { ...tx, status: "pending" };
+    const withPending = finoraReducer(initialFinoraState, { type: "PAYMENT_PROPOSED", tx: pending });
+
+    const frozen = finoraReducer(withPending, { type: "FREEZE_TOGGLED", notification: notif });
+    expect(frozen.txs[0].status).toBe("cancelled");
+    expect(frozen.txs[0].note).toMatch(/kill switch/i);
+    expect(frozen.balance).toBe(0); // cancelled — no funds ever moved for this payment
+  });
+
+  it("does not disturb already-settled or already-blocked txs when freezing", () => {
+    const settled = finoraReducer(initialFinoraState, { type: "PAYMENT_PROPOSED", tx });
+    const frozen = finoraReducer(settled, { type: "FREEZE_TOGGLED", notification: notif });
+    expect(frozen.txs[0].status).toBe(tx.status); // "approved" fixture, untouched — only "pending" gets cancelled
   });
 
   it("clears balance and bumps score on job completion, capped at 99", () => {

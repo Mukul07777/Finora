@@ -31,12 +31,14 @@ function timeNow() {
 }
 
 const TX_ICONS: Record<Tx["status"], React.ComponentType<{ size?: number; className?: string }>> = {
+  pending: Loader2,
   approved: ArrowUpRight,
   blocked: Ban,
   cancelled: XCircle,
   repayment: ArrowDownLeft,
 };
 const TX_STYLES: Record<Tx["status"], string> = {
+  pending: "text-amber-400 bg-amber-400/10",
   approved: "text-emerald-400 bg-emerald-400/10",
   blocked: "text-red-400 bg-red-400/10",
   cancelled: "text-amber-400 bg-amber-400/10",
@@ -366,7 +368,7 @@ function ActivityScreen({ txs }: { txs: Tx[] }) {
         return (
           <div key={tx.id} className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
             <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${TX_STYLES[tx.status]}`}>
-              <Icon size={13} />
+              <Icon size={13} className={tx.status === "pending" ? "animate-spin" : undefined} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">

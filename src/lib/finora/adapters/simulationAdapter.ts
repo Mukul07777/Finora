@@ -48,6 +48,10 @@ export const simulationAdapter: FinoraAdapter = {
     return evaluatePayment(state);
   },
 
+  async settlePayment(signal) {
+    await delay(900, signal);
+  },
+
   async attemptRoguePayment(state, signal) {
     await delay(350, signal);
     const risk = computeVelocityRisk(state.txs, Date.now());

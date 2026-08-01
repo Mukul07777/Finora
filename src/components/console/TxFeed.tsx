@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, Ban, XCircle } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Ban, Loader2, XCircle } from "lucide-react";
 import { Tx } from "./types";
 
 const ICONS: Record<Tx["status"], React.ComponentType<{ size?: number; className?: string }>> = {
+  pending: Loader2,
   approved: ArrowUpRight,
   blocked: Ban,
   cancelled: XCircle,
@@ -12,6 +13,7 @@ const ICONS: Record<Tx["status"], React.ComponentType<{ size?: number; className
 };
 
 const STYLES: Record<Tx["status"], string> = {
+  pending: "text-warning bg-warning/10",
   approved: "text-accent bg-accent/10",
   blocked: "text-danger bg-danger/10",
   cancelled: "text-warning bg-warning/10",
@@ -50,7 +52,7 @@ export function TxFeed({ txs }: { txs: Tx[] }) {
                 className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 px-3 py-2.5"
               >
                 <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${STYLES[tx.status]}`}>
-                  <Icon size={15} />
+                  <Icon size={15} className={tx.status === "pending" ? "animate-spin" : undefined} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">

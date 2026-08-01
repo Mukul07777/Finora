@@ -6,9 +6,10 @@ export type FinoraAction =
   | { type: "CREDIT_UNDERWRITING_STEP"; step: number }
   | { type: "CREDIT_APPROVED"; notification: Notification }
   | { type: "PAYMENT_BLOCKED"; tx: Tx; notification: Notification }
-  | { type: "PAYMENT_APPROVED"; tx: Tx; amount: number }
+  | { type: "PAYMENT_PROPOSED"; tx: Tx }
+  | { type: "PAYMENT_SETTLED"; id: string; amount: number }
   | { type: "ROGUE_BLOCKED"; tx: Tx; notification: Notification; scoreDelta: number }
-  | { type: "FREEZE_TOGGLED"; tx: Tx | null; notification: Notification }
+  | { type: "FREEZE_TOGGLED"; notification: Notification }
   | { type: "JOB_COMPLETED"; tx: Tx; notification: Notification };
 
 export const initialFinoraState: FinoraState = {
@@ -25,6 +26,10 @@ export const initialFinoraState: FinoraState = {
 
 function pushTx(txs: Tx[], tx: Tx): Tx[] {
   return [tx, ...txs].slice(0, 20);
+}
+
+function updateTx(txs: Tx[], id: string, patch: Partial<Pick<Tx, "status" | "note">>): Tx[] {
+  return txs.map((t) => (t.id === id ? { ...t, ...patch } : t));
 }
 
 function pushNotification(notifications: Notification[], notification: Notification): Notification[] {
@@ -75,11 +80,24 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
         notifications: pushNotification(state.notifications, action.notification),
       };
 
-    case "PAYMENT_APPROVED":
+    // Two-step payment lifecycle, mirroring AgentWallet.sol's
+    // proposePayment() / executePayment() split: a proposed payment sits
+    // as "pending" in the feed and only moves money once settled. If the
+    // owner freezes in between, FREEZE_TOGGLED below cancels it directly
+    // — the coordinator checks frozen state before calling SETTLED and
+    // simply stands down if it lost the race, rather than dispatching a
+    // second, separate cancellation.
+    case "PAYMENT_PROPOSED":
+      return { ...state, txs: pushTx(state.txs, action.tx) };
+
+    case "PAYMENT_SETTLED":
       return {
         ...state,
         balance: state.balance + action.amount,
-        txs: pushTx(state.txs, action.tx),
+        txs: updateTx(state.txs, action.id, {
+          status: "approved",
+          note: "Executed — within policy · counterparty allowlisted",
+        }),
       };
 
     case "ROGUE_BLOCKED": {
@@ -93,13 +111,25 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
       };
     }
 
-    case "FREEZE_TOGGLED":
+    case "FREEZE_TOGGLED": {
+      const freezing = !state.frozen;
       return {
         ...state,
-        frozen: !state.frozen,
-        txs: action.tx ? pushTx(state.txs, action.tx) : state.txs,
+        frozen: freezing,
+        // Freezing kills every pending payment immediately — a real
+        // consequence of real pending state, not a scripted example
+        // transaction. Reinstating touches nothing; nothing was ever
+        // un-cancelled by a real kill switch either.
+        txs: freezing
+          ? state.txs.map((t) =>
+              t.status === "pending"
+                ? { ...t, status: "cancelled" as const, note: "Cancelled mid-execution by owner kill switch" }
+                : t
+            )
+          : state.txs,
         notifications: pushNotification(state.notifications, action.notification),
       };
+    }
 
     case "JOB_COMPLETED": {
       const newScore = Math.min(99, state.score + 2);

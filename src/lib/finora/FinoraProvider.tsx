@@ -133,17 +133,52 @@ export function FinoraProvider({
         return;
       }
 
-      dispatch({
-        type: "PAYMENT_APPROVED",
+      // Re-check frozen state right before proposing — proposePayment()
+      // on-chain is itself whenNotPaused, so a freeze that lands during
+      // this decision window blocks the proposal outright rather than
+      // leaving it to hang unresolved.
+      if (stateRef.current.frozen) {
+        dispatch({
+          type: "PAYMENT_BLOCKED",
+          tx: buildTx({
+            label: "Payment attempt",
+            counterparty: result.merchant,
+            amount: result.amount,
+            status: "blocked",
+            note: "Blocked — agent frozen before the payment could be proposed",
+          }),
+          notification: {
+            id: nextId("notif"),
+            tone: "warn",
+            title: "Payment blocked",
+            body: "Agent was frozen before this payment could be proposed",
+            time: timeNow(),
+          },
+        });
+        return;
+      }
+
+      // Proposed: enters the feed as "pending", same as proposePayment()
+      // on-chain — the money hasn't moved yet.
+      const pendingTx = buildTx({
+        label: "Task expense",
+        counterparty: result.merchant,
         amount: result.amount,
-        tx: buildTx({
-          label: "Task expense",
-          counterparty: result.merchant,
-          amount: result.amount,
-          status: "approved",
-          note: "Within policy · counterparty allowlisted",
-        }),
+        status: "pending",
+        note: "Proposed — awaiting settlement window",
       });
+      dispatch({ type: "PAYMENT_PROPOSED", tx: pendingTx });
+
+      await adapter.settlePayment(controllerRef.current!.signal);
+
+      // Re-check frozen state now, at settlement time, not proposal time
+      // — matches executePayment()'s whenNotPaused check. If the owner
+      // froze in between, FREEZE_TOGGLED already cancelled this exact
+      // pending tx; standing down here avoids a second, conflicting
+      // dispatch for the same payment.
+      if (stateRef.current.frozen) return;
+
+      dispatch({ type: "PAYMENT_SETTLED", id: pendingTx.id, amount: result.amount });
     } catch (err) {
       if (!isAbortError(err)) throw err;
     }
@@ -187,15 +222,6 @@ export function FinoraProvider({
 
       dispatch({
         type: "FREEZE_TOGGLED",
-        tx: willFreeze
-          ? buildTx({
-              label: "In-flight transfer",
-              counterparty: "api.compute.gpu",
-              amount: 260,
-              status: "cancelled",
-              note: "Cancelled mid-execution by owner kill switch",
-            })
-          : null,
         notification: {
           id: nextId("notif"),
           tone: willFreeze ? "danger" : "ok",
