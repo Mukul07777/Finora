@@ -11,7 +11,9 @@ import {
   useRef,
 } from "react";
 import { finoraReducer, initialFinoraState } from "./reducer";
-import { ALLOWLIST, FinoraState, UNDERWRITING_STEPS } from "./types";
+import { FinoraAdapter, isAbortError } from "./adapter";
+import { simulationAdapter } from "./adapters/simulationAdapter";
+import { FinoraState } from "./types";
 
 function timeNow() {
   return new Date().toLocaleTimeString("en-IN", { hour12: false });
@@ -38,170 +40,205 @@ const FinoraActionsContext = createContext<FinoraActions | null>(null);
  * Owns one shared agent session. Console and PhoneApp both read from and
  * act on this same instance — freezing the agent from the phone freezes
  * the console above it, because it is the same agent, not two demos.
+ *
+ * The `adapter` prop is the seam between this component and where credit
+ * decisions / payment outcomes actually come from. Defaults to
+ * `simulationAdapter` (timers + randomness, labeled "Simulation Mode" in
+ * the UI). A future OnchainAdapter that calls AgentWallet.sol through a
+ * connected wallet would implement the same FinoraAdapter interface —
+ * nothing below this line, the reducer, or any consuming component would
+ * need to change.
  */
-export function FinoraProvider({ children }: { children: ReactNode }) {
+export function FinoraProvider({
+  children,
+  adapter = simulationAdapter,
+}: {
+  children: ReactNode;
+  adapter?: FinoraAdapter;
+}) {
   const [state, dispatch] = useReducer(finoraReducer, initialFinoraState);
 
-  // Timer callbacks close over stale state on the render they were
-  // scheduled in; stateRef always reflects the latest state instead.
+  // Async action callbacks close over stale state on the render they were
+  // created in; stateRef always reflects the latest state instead.
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // One AbortController for the provider's lifetime — every in-flight
+  // adapter call is cancelled on unmount instead of dispatching into a
+  // torn-down tree.
+  const controllerRef = useRef<AbortController | null>(null);
+  if (!controllerRef.current) controllerRef.current = new AbortController();
+
   useEffect(() => {
-    return () => {
-      timers.current.forEach(clearTimeout);
-    };
+    return () => controllerRef.current?.abort();
   }, []);
 
-  const requestCredit = useCallback(() => {
+  const requestCredit = useCallback(async () => {
     if (stateRef.current.creditStatus !== "idle") return;
     dispatch({ type: "CREDIT_REQUEST_STARTED" });
 
-    for (let i = 1; i <= UNDERWRITING_STEPS; i++) {
-      const t = setTimeout(() => dispatch({ type: "CREDIT_UNDERWRITING_STEP", step: i }), i * 650);
-      timers.current.push(t);
-    }
-
-    const done = setTimeout(() => {
+    try {
+      const signal = controllerRef.current!.signal;
+      const approval = await adapter.requestCredit(
+        (step) => dispatch({ type: "CREDIT_UNDERWRITING_STEP", step }),
+        signal
+      );
       dispatch({
         type: "CREDIT_APPROVED",
-        limit: 8200,
-        apr: 14.2,
+        limit: approval.limit,
+        apr: approval.apr,
         notification: {
           id: nextId("notif"),
           tone: "ok",
           title: "Credit approved",
-          body: "₹8,200 line issued at 14.2% APR",
+          body: `₹${approval.limit.toLocaleString("en-IN")} line issued at ${approval.apr}% APR`,
           time: timeNow(),
         },
       });
-    }, (UNDERWRITING_STEPS + 1) * 650);
-    timers.current.push(done);
-  }, []);
+    } catch (err) {
+      if (!isAbortError(err)) throw err;
+    }
+  }, [adapter]);
 
-  const sendPayment = useCallback(() => {
+  const sendPayment = useCallback(async () => {
     const s = stateRef.current;
     if (s.frozen || s.creditStatus !== "approved") return;
 
-    const merchant = ALLOWLIST[Math.floor(Math.random() * ALLOWLIST.length)];
-    const amount = Math.round(80 + Math.random() * 370);
-    const remaining = s.limit - s.balance;
+    try {
+      const result = await adapter.attemptPayment(s, controllerRef.current!.signal);
 
-    if (amount > remaining) {
+      if (!result.allowed) {
+        dispatch({
+          type: "PAYMENT_BLOCKED",
+          tx: {
+            id: nextId("tx"),
+            time: timeNow(),
+            label: "Payment attempt",
+            counterparty: result.merchant,
+            amount: result.amount,
+            status: "blocked",
+            note: result.reason ?? "Blocked by policy",
+          },
+          notification: {
+            id: nextId("notif"),
+            tone: "warn",
+            title: "Payment blocked",
+            body: `₹${result.amount.toLocaleString("en-IN")} exceeded available credit`,
+            time: timeNow(),
+          },
+        });
+        return;
+      }
+
       dispatch({
-        type: "PAYMENT_BLOCKED",
+        type: "PAYMENT_APPROVED",
+        amount: result.amount,
+        tx: {
+          id: nextId("tx"),
+          time: timeNow(),
+          label: "Task expense",
+          counterparty: result.merchant,
+          amount: result.amount,
+          status: "approved",
+          note: "Within policy · counterparty allowlisted",
+        },
+      });
+    } catch (err) {
+      if (!isAbortError(err)) throw err;
+    }
+  }, [adapter]);
+
+  const simulateRogue = useCallback(async () => {
+    const s = stateRef.current;
+    if (s.frozen || s.creditStatus !== "approved") return;
+
+    try {
+      const result = await adapter.attemptRoguePayment(s, controllerRef.current!.signal);
+      dispatch({
+        type: "ROGUE_BLOCKED",
         tx: {
           id: nextId("tx"),
           time: timeNow(),
           label: "Payment attempt",
-          counterparty: merchant,
-          amount,
+          counterparty: result.merchant,
+          amount: result.amount,
           status: "blocked",
-          note: "Blocked — exceeds available credit headroom",
+          note: result.reason ?? "Blocked by policy",
         },
         notification: {
           id: nextId("notif"),
-          tone: "warn",
-          title: "Payment blocked",
-          body: `₹${amount.toLocaleString("en-IN")} exceeded available credit`,
+          tone: "danger",
+          title: "Security alert",
+          body: "Anomaly detected — spend velocity spike (risk 0.91)",
           time: timeNow(),
         },
       });
-      return;
+    } catch (err) {
+      if (!isAbortError(err)) throw err;
     }
+  }, [adapter]);
 
-    dispatch({
-      type: "PAYMENT_APPROVED",
-      amount,
-      tx: {
-        id: nextId("tx"),
-        time: timeNow(),
-        label: "Task expense",
-        counterparty: merchant,
-        amount,
-        status: "approved",
-        note: "Within policy · counterparty allowlisted",
-      },
-    });
-  }, []);
+  const toggleFreeze = useCallback(async () => {
+    try {
+      const s = stateRef.current;
+      const result = await adapter.toggleFreeze(s, controllerRef.current!.signal);
+      const willFreeze = result.willFreeze;
 
-  const simulateRogue = useCallback(() => {
-    const s = stateRef.current;
-    if (s.frozen || s.creditStatus !== "approved") return;
+      dispatch({
+        type: "FREEZE_TOGGLED",
+        tx: willFreeze
+          ? {
+              id: nextId("tx"),
+              time: timeNow(),
+              label: "In-flight transfer",
+              counterparty: "api.compute.gpu",
+              amount: 260,
+              status: "cancelled",
+              note: "Cancelled mid-execution by owner kill switch",
+            }
+          : null,
+        notification: {
+          id: nextId("notif"),
+          tone: willFreeze ? "danger" : "ok",
+          title: willFreeze ? "Agent frozen" : "Agent reinstated",
+          body: willFreeze ? "All pending & future transactions cancelled" : "Policies re-armed",
+          time: timeNow(),
+        },
+      });
+    } catch (err) {
+      if (!isAbortError(err)) throw err;
+    }
+  }, [adapter]);
 
-    dispatch({
-      type: "ROGUE_BLOCKED",
-      tx: {
-        id: nextId("tx"),
-        time: timeNow(),
-        label: "Payment attempt",
-        counterparty: "wallet_x02.unknown",
-        amount: 4000,
-        status: "blocked",
-        note: "Blocked — counterparty not allowlisted",
-      },
-      notification: {
-        id: nextId("notif"),
-        tone: "danger",
-        title: "Security alert",
-        body: "Anomaly detected — spend velocity spike (risk 0.91)",
-        time: timeNow(),
-      },
-    });
-  }, []);
-
-  const toggleFreeze = useCallback(() => {
-    const willFreeze = !stateRef.current.frozen;
-
-    dispatch({
-      type: "FREEZE_TOGGLED",
-      tx: willFreeze
-        ? {
-            id: nextId("tx"),
-            time: timeNow(),
-            label: "In-flight transfer",
-            counterparty: "api.compute.gpu",
-            amount: 260,
-            status: "cancelled",
-            note: "Cancelled mid-execution by owner kill switch",
-          }
-        : null,
-      notification: {
-        id: nextId("notif"),
-        tone: willFreeze ? "danger" : "ok",
-        title: willFreeze ? "Agent frozen" : "Agent reinstated",
-        body: willFreeze ? "All pending & future transactions cancelled" : "Policies re-armed",
-        time: timeNow(),
-      },
-    });
-  }, []);
-
-  const completeJob = useCallback(() => {
+  const completeJob = useCallback(async () => {
     const s = stateRef.current;
     if (s.frozen || s.balance <= 0) return;
 
-    const revenue = s.balance + 2200;
-    dispatch({
-      type: "JOB_COMPLETED",
-      tx: {
-        id: nextId("tx"),
-        time: timeNow(),
-        label: "Task revenue received",
-        counterparty: "client.settlement",
-        amount: revenue,
-        status: "repayment",
-        note: `Auto-repaid outstanding balance of ₹${s.balance.toLocaleString("en-IN")}`,
-      },
-      notification: {
-        id: nextId("notif"),
-        tone: "ok",
-        title: "Loan repaid",
-        body: "Balance auto-cleared from task revenue",
-        time: timeNow(),
-      },
-    });
-  }, []);
+    try {
+      const result = await adapter.completeJob(s, controllerRef.current!.signal);
+      dispatch({
+        type: "JOB_COMPLETED",
+        tx: {
+          id: nextId("tx"),
+          time: timeNow(),
+          label: "Task revenue received",
+          counterparty: "client.settlement",
+          amount: result.revenue,
+          status: "repayment",
+          note: `Auto-repaid outstanding balance of ₹${s.balance.toLocaleString("en-IN")}`,
+        },
+        notification: {
+          id: nextId("notif"),
+          tone: "ok",
+          title: "Loan repaid",
+          body: "Balance auto-cleared from task revenue",
+          time: timeNow(),
+        },
+      });
+    } catch (err) {
+      if (!isAbortError(err)) throw err;
+    }
+  }, [adapter]);
 
   const actions = useMemo<FinoraActions>(
     () => ({ requestCredit, sendPayment, simulateRogue, toggleFreeze, completeJob }),
