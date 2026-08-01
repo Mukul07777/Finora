@@ -1,16 +1,4 @@
-export type TxStatus = "approved" | "blocked" | "cancelled" | "repayment";
-
-export interface Tx {
-  id: string;
-  time: string;
-  label: string;
-  counterparty: string;
-  amount: number;
-  status: TxStatus;
-  note: string;
-}
-
-export type CreditStatus = "idle" | "underwriting" | "approved";
+export type { Tx, TxStatus, CreditStatus } from "@/lib/finora/types";
 
 export interface AlertMsg {
   id: string;

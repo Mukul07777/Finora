@@ -1,6 +1,7 @@
 import { Section } from "./ui/Section";
 import { Console } from "./console/Console";
 import { PhoneApp } from "./console/PhoneApp";
+import { FinoraProvider } from "@/lib/finora/FinoraProvider";
 
 function SimulationBadge() {
   return (
@@ -13,7 +14,7 @@ function SimulationBadge() {
 
 export function ConsoleSection() {
   return (
-    <>
+    <FinoraProvider>
       <Section
         id="console"
         eyebrow="Try it yourself"
@@ -29,13 +30,13 @@ export function ConsoleSection() {
       <Section
         eyebrow="Same policy, another surface"
         title="Or run the whole thing from your pocket"
-        description="This isn't a notification mirror of the console above — it's a separate, fully working mobile app with its own state. Tap through it: request credit, spend, get blocked, and pull the kill switch, all from the phone itself."
+        description="This is the same agent session as the console above, not a separate demo — it's a fully working mobile app you can tap through on its own. Pull the kill switch here and the console above freezes too, because it's the same policy enforced from a different surface."
       >
         <div className="dark-scope rounded-3xl border border-border p-4 sm:p-10">
           <SimulationBadge />
           <PhoneApp />
         </div>
       </Section>
-    </>
+    </FinoraProvider>
   );
 }

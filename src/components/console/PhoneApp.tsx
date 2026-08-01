@@ -21,20 +21,13 @@ import {
 } from "lucide-react";
 import { ScoreGauge } from "./ScoreGauge";
 import type { PhoneNotif, Tx } from "./types";
+import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
+import type { CreditStatus } from "@/lib/finora/types";
 
 type Tab = "home" | "activity" | "alerts" | "agent";
-type CreditStatus = "idle" | "underwriting" | "approved";
-
-const ALLOWLIST = ["api.compute.gpu", "vendor.data-feed", "cloud.storage.us"];
 
 function timeNow() {
   return new Date().toLocaleTimeString("en-IN", { hour12: false, hour: "2-digit", minute: "2-digit" });
-}
-
-let idCounter = 0;
-function nextId() {
-  idCounter += 1;
-  return `phoneapp_${idCounter}_${Date.now()}`;
 }
 
 const TX_ICONS: Record<Tx["status"], React.ComponentType<{ size?: number; className?: string }>> = {
@@ -62,105 +55,49 @@ const NOTIF_RING: Record<PhoneNotif["tone"], string> = {
 };
 
 /**
- * A standalone, self-contained mobile app simulation running inside a
- * phone frame. It keeps its own state — it is not a mirror of the web
- * console — so freezing the agent, requesting credit, and spending all
- * happen by tapping through the phone itself, the way an owner managing
- * an agent from their pocket actually would.
+ * A fully interactive mobile app running inside a phone frame — tap
+ * through it directly, it doesn't just mirror console notifications.
+ * It shares one FinoraProvider instance with the console above it, so
+ * both surfaces are live views of the same agent: pull the kill switch
+ * here and the console freezes too, and vice versa.
  */
 export function PhoneApp() {
+  const state = useFinoraState();
+  const actions = useFinoraActions();
+  const { frozen, score, creditStatus, limit, apr, balance, txs } = state;
+  const underwriting = creditStatus === ("underwriting" as CreditStatus);
+
   const [tab, setTab] = useState<Tab>("home");
-  const [frozen, setFrozen] = useState(false);
-  const [score, setScore] = useState(82);
-  const [creditStatus, setCreditStatus] = useState<CreditStatus>("idle");
-  const [underwriting, setUnderwriting] = useState(false);
-  const [limit, setLimit] = useState(0);
-  const [apr, setApr] = useState(0);
-  const [balance, setBalance] = useState(0);
-  const [txs, setTxs] = useState<Tx[]>([]);
   const [notifs, setNotifs] = useState<PhoneNotif[]>([]);
   const [toast, setToast] = useState<PhoneNotif | null>(null);
   const [clock, setClock] = useState("--:--");
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setClock(timeNow());
     const clockId = setInterval(() => setClock(timeNow()), 30000);
+    return () => clearInterval(clockId);
+  }, []);
+
+  // Mirrors shared notifications into this screen's own list + toast —
+  // presentation only, the underlying agent state lives in FinoraProvider.
+  useEffect(() => {
+    const latest = state.notifications[0];
+    if (!latest) return;
+    const notif: PhoneNotif = { id: latest.id, title: latest.title, body: latest.body, tone: latest.tone };
+    setNotifs((prev) => (prev[0]?.id === notif.id ? prev : [notif, ...prev].slice(0, 20)));
+    setToast(notif);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast((cur) => (cur?.id === notif.id ? null : cur)), 3200);
+  }, [state.notifications]);
+
+  useEffect(() => {
     return () => {
-      clearInterval(clockId);
-      timers.current.forEach(clearTimeout);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
 
   const tier = score >= 85 ? "Trusted" : score >= 60 ? "Established" : "New";
-  const creditActive = creditStatus === "approved";
-
-  function pushNotif(title: string, body: string, tone: PhoneNotif["tone"]) {
-    const notif = { id: nextId(), title, body, tone };
-    setNotifs((prev) => [notif, ...prev].slice(0, 20));
-    setToast(notif);
-    const t = setTimeout(() => setToast((cur) => (cur?.id === notif.id ? null : cur)), 3200);
-    timers.current.push(t);
-  }
-
-  function pushTx(tx: Omit<Tx, "id" | "time">) {
-    setTxs((prev) => [{ ...tx, id: nextId(), time: timeNow() }, ...prev].slice(0, 20));
-  }
-
-  function handleRequestCredit() {
-    if (creditStatus !== "idle") return;
-    setUnderwriting(true);
-    const t = setTimeout(() => {
-      setUnderwriting(false);
-      setCreditStatus("approved");
-      setLimit(8200);
-      setApr(14.2);
-      pushNotif("Credit approved", "₹8,200 line issued at 14.2% APR", "ok");
-    }, 1800);
-    timers.current.push(t);
-  }
-
-  function handlePay() {
-    if (frozen || !creditActive) return;
-    const merchant = ALLOWLIST[Math.floor(Math.random() * ALLOWLIST.length)];
-    const amount = Math.round(80 + Math.random() * 300);
-    const remaining = limit - balance;
-
-    if (amount > remaining) {
-      pushTx({ label: "Payment attempt", counterparty: merchant, amount, status: "blocked", note: "Exceeds available credit" });
-      pushNotif("Payment blocked", `₹${amount.toLocaleString("en-IN")} exceeded available credit`, "warn");
-      return;
-    }
-    setBalance((b) => b + amount);
-    pushTx({ label: "Task expense", counterparty: merchant, amount, status: "approved", note: "Within policy" });
-  }
-
-  function handleRogue() {
-    if (frozen || !creditActive) return;
-    pushTx({ label: "Payment attempt", counterparty: "wallet_x02.unknown", amount: 4000, status: "blocked", note: "Not allowlisted" });
-    setScore((s) => Math.max(40, s - 4));
-    pushNotif("Security alert", "Blocked ₹4,000 to an unlisted wallet", "danger");
-  }
-
-  function handleFreeze() {
-    if (!frozen) {
-      setFrozen(true);
-      pushTx({ label: "In-flight transfer", counterparty: "api.compute.gpu", amount: 260, status: "cancelled", note: "Cancelled by kill switch" });
-      pushNotif("Agent frozen", "All pending & future transactions cancelled", "danger");
-    } else {
-      setFrozen(false);
-      pushNotif("Agent reinstated", "Policies re-armed", "ok");
-    }
-  }
-
-  function handleRepay() {
-    if (frozen || balance <= 0) return;
-    const revenue = balance + 2200;
-    pushTx({ label: "Revenue received", counterparty: "client.settlement", amount: revenue, status: "repayment", note: `Repaid ₹${balance.toLocaleString("en-IN")}` });
-    setBalance(0);
-    setScore((s) => Math.min(99, s + 2));
-    pushNotif("Loan repaid", "Balance auto-cleared from task revenue", "ok");
-  }
 
   const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
     { id: "home", label: "Home", icon: Home },
@@ -242,11 +179,11 @@ export function PhoneApp() {
                     limit={limit}
                     apr={apr}
                     balance={balance}
-                    onRequestCredit={handleRequestCredit}
-                    onPay={handlePay}
-                    onRogue={handleRogue}
-                    onFreeze={handleFreeze}
-                    onRepay={handleRepay}
+                    onRequestCredit={actions.requestCredit}
+                    onPay={actions.sendPayment}
+                    onRogue={actions.simulateRogue}
+                    onFreeze={actions.toggleFreeze}
+                    onRepay={actions.completeJob}
                   />
                 )}
                 {tab === "activity" && <ActivityScreen txs={txs} />}

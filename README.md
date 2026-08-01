@@ -95,8 +95,9 @@ The same policy object that decides how much an agent can borrow is the one that
 | Layer | Tech |
 |---|---|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Framer Motion |
+| Shared state | `FinoraProvider` — a `useReducer` store with a pure reducer + async action coordinator, single source of truth for the console and phone demos |
 | Enforcement contract | Solidity 0.8.24, Hardhat, ethers v6, TypeChain |
-| Testing | Mocha/Chai via Hardhat (17 tests), `tsc --noEmit`, `next build` |
+| Testing | Mocha/Chai via Hardhat (17 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
 
 ## Project structure
 
@@ -104,8 +105,9 @@ The same policy object that decides how much an agent can borrow is the one that
 Finora/
 ├─ src/
 │  ├─ app/                 routes: /, /console, /security, /pricing, /docs, /about
+│  ├─ lib/finora/          shared agent state: pure reducer + FinoraProvider (+ Vitest tests)
 │  └─ components/
-│     ├─ console/          the interactive credit + kill-switch demo (client state)
+│     ├─ console/          Console (desktop) & PhoneApp (mobile) — two views of one FinoraProvider
 │     └─ ui/                shared layout primitives
 ├─ onchain/
 │  ├─ contracts/AgentWallet.sol
@@ -122,7 +124,8 @@ Finora/
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+npm run dev            # http://localhost:3000
+npm run test:unit      # Vitest — pure reducer unit tests
 ```
 
 **On-chain layer**
