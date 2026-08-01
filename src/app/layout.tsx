@@ -36,8 +36,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('finora-theme');if(t==='light'){document.documentElement.setAttribute('data-theme','light');}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <TickerBar />
         <Nav />

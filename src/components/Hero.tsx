@@ -69,7 +69,7 @@ export function Hero() {
           <motion.div variants={item} className="mt-10 flex flex-wrap items-center gap-4">
             <Link
               href="/console"
-              className="glow-accent rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+              className="glow-accent rounded-full bg-accent px-6 py-3 text-sm font-semibold text-on-accent transition-transform hover:scale-[1.03]"
             >
               Launch Live Console →
             </Link>

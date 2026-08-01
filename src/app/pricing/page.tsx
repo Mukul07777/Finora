@@ -98,7 +98,7 @@ export default function PricingPage() {
               }`}
             >
               {t.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-on-accent">
                   Most common
                 </span>
               )}
@@ -124,7 +124,7 @@ export default function PricingPage() {
                 href="/console"
                 className={`mt-8 block rounded-full px-5 py-3 text-center text-sm font-semibold transition-transform hover:scale-[1.02] ${
                   t.highlighted
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-on-accent"
                     : "border border-border text-foreground hover:border-muted"
                 }`}
               >

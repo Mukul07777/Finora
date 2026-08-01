@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
   { href: "/console", label: "Live Console" },
@@ -31,7 +32,10 @@ export function Nav() {
     >
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-accent-2 font-display text-sm font-bold text-white">
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-md font-display text-sm font-bold text-white"
+            style={{ background: "linear-gradient(135deg, #059669, #4338ca)" }}
+          >
             F
           </span>
           <span className="font-display text-lg font-semibold tracking-tight text-foreground">
@@ -56,12 +60,15 @@ export function Nav() {
           })}
         </nav>
 
-        <Link
-          href="/console"
-          className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-transform hover:scale-[1.03]"
-        >
-          Launch Console
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href="/console"
+            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-transform hover:scale-[1.03]"
+          >
+            Launch Console
+          </Link>
+        </div>
       </div>
     </header>
   );

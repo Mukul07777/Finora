@@ -1,6 +1,27 @@
 @import "tailwindcss";
 
+/* Dark is the default, flagship theme. Light is opt-in via the toggle. */
 :root {
+  --background: #05060a;
+  --surface: #0b0d13;
+  --surface-2: #10131b;
+  --border: #1e2230;
+  --foreground: #eef1f7;
+  --muted: #8890a4;
+  --accent: #7dffb3;
+  --accent-2: #6ea8ff;
+  --violet: #a78bfa;
+  --danger: #ff5c6c;
+  --warning: #ffb85c;
+  --on-accent: #06070a;
+  --shadow-tint: 0, 0, 0;
+  --grid-line: rgba(255, 255, 255, 0.045);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-inter);
+}
+
+:root[data-theme="light"] {
   --background: #fafaf8;
   --surface: #ffffff;
   --surface-2: #f3f4f1;
@@ -12,14 +33,15 @@
   --violet: #7c3aed;
   --danger: #dc2626;
   --warning: #b45309;
+  --on-accent: #ffffff;
   --shadow-tint: 15, 23, 42;
-  --font-display: var(--font-space-grotesk);
-  --font-mono: var(--font-jetbrains-mono);
-  --font-sans: var(--font-inter);
+  --grid-line: rgba(15, 23, 42, 0.05);
 }
 
+/* .dark-scope forces the dark palette for a single panel regardless of
+   the site-wide theme (used for the console/phone "product UI" look). */
 .dark-scope {
-  --background: #06070a;
+  --background: #05060a;
   --surface: #0b0d13;
   --surface-2: #10131b;
   --border: #1e2230;
@@ -30,7 +52,9 @@
   --violet: #a78bfa;
   --danger: #ff5c6c;
   --warning: #ffb85c;
+  --on-accent: #06070a;
   --shadow-tint: 0, 0, 0;
+  --grid-line: rgba(255, 255, 255, 0.045);
 }
 
 @theme inline {
@@ -45,6 +69,7 @@
   --color-violet: var(--violet);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
+  --color-on-accent: var(--on-accent);
   --font-display: var(--font-display);
   --font-mono: var(--font-mono);
   --font-sans: var(--font-sans);
@@ -63,10 +88,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   background-image:
+    radial-gradient(1200px 600px at 15% -10%, rgba(125, 255, 179, 0.09), transparent 60%),
+    radial-gradient(1000px 500px at 90% 0%, rgba(110, 168, 255, 0.1), transparent 55%),
+    radial-gradient(800px 400px at 50% 100%, rgba(167, 139, 250, 0.08), transparent 60%);
+  background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="light"] body {
+  background-image:
     radial-gradient(1100px 550px at 12% -10%, rgba(5, 150, 105, 0.07), transparent 60%),
     radial-gradient(900px 480px at 92% 0%, rgba(67, 56, 202, 0.06), transparent 55%),
     radial-gradient(700px 380px at 50% 100%, rgba(124, 58, 237, 0.05), transparent 60%);
-  background-attachment: fixed;
 }
 
 .dark-scope {
@@ -80,10 +113,7 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: var(--background);
-}
-.dark-scope ::selection {
-  color: #06070a;
+  color: var(--on-accent);
 }
 
 ::-webkit-scrollbar {
@@ -107,17 +137,11 @@ body {
 
 .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 42px 42px;
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
-}
-.dark-scope .grid-bg,
-.dark-scope.grid-bg {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
 }
 
 .card-surface {
@@ -127,9 +151,12 @@ body {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(9, 11, 18, 0.94);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
+}
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.7);
 }
 .dark-scope .glass,
 .dark-scope.glass {
@@ -137,6 +164,12 @@ body {
 }
 
 .glow-accent {
+  box-shadow:
+    0 0 0 1px rgba(125, 255, 179, 0.18),
+    0 0 60px -6px rgba(125, 255, 179, 0.45),
+    0 0 160px -20px rgba(125, 255, 179, 0.35);
+}
+[data-theme="light"] .glow-accent {
   box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.16), 0 16px 40px -14px rgba(5, 150, 105, 0.4);
 }
 .dark-scope .glow-accent,
@@ -148,6 +181,9 @@ body {
 }
 
 .glow-danger {
+  box-shadow: 0 0 0 1px rgba(255, 92, 108, 0.25), 0 0 40px -8px rgba(255, 92, 108, 0.45);
+}
+[data-theme="light"] .glow-danger {
   box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.18), 0 16px 40px -14px rgba(220, 38, 38, 0.35);
 }
 .dark-scope .glow-danger,
@@ -156,10 +192,15 @@ body {
 }
 
 .text-gradient {
-  background: linear-gradient(90deg, #059669 0%, #4338ca 60%, #7c3aed 100%);
+  background: linear-gradient(90deg, #7dffb3 0%, #6ea8ff 50%, #a78bfa 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+[data-theme="light"] .text-gradient {
+  background: linear-gradient(90deg, #059669 0%, #4338ca 60%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 .dark-scope .text-gradient,
 .dark-scope.text-gradient {
@@ -225,6 +266,14 @@ body {
   animation: float-card 6s ease-in-out infinite;
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+
 .orb {
   position: absolute;
   border-radius: 9999px;
@@ -238,4 +287,11 @@ body {
 .card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 40px -20px rgba(var(--shadow-tint), 0.18);
+}
+
+.glow-text {
+  text-shadow: 0 0 24px rgba(125, 255, 179, 0.45), 0 0 60px rgba(125, 255, 179, 0.25);
+}
+[data-theme="light"] .glow-text {
+  text-shadow: none;
 }

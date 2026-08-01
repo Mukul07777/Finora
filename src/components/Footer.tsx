@@ -26,7 +26,10 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-accent to-accent-2 font-display text-sm font-bold text-white">
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-md font-display text-sm font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #059669, #4338ca)" }}
+              >
                 F
               </span>
               <span className="font-display text-lg font-semibold text-foreground">Finora</span>
