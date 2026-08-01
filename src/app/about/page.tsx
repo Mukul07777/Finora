@@ -59,9 +59,9 @@ export default function AboutPage() {
       <Section eyebrow="What we believe" title="Principles behind the build">
         <div className="grid gap-6 sm:grid-cols-2">
           {VALUES.map((v) => (
-            <div key={v.title} className="card-hover rounded-2xl border border-border bg-surface p-6">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-                <v.icon size={18} strokeWidth={1.75} />
+            <div key={v.title} className="card-hover card-premium rounded-2xl p-6">
+              <div className="icon-badge mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-accent">
+                <v.icon size={19} strokeWidth={1.75} />
               </div>
               <h3 className="font-display text-sm font-semibold text-foreground">{v.title}</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-muted">{v.body}</p>
@@ -71,7 +71,7 @@ export default function AboutPage() {
       </Section>
 
       <Section eyebrow="The team" title="Built during Innova Hack Chapter-1">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-surface p-8 text-center">
+        <div className="card-premium mx-auto max-w-2xl rounded-2xl p-8 text-center">
           <p className="text-sm leading-relaxed text-muted">
             Finora is built by a small team competing in the Fintech domain of Innova Hack
             Chapter-1, organised by Elite Forums and powered by Unstop. We&apos;re builders first —

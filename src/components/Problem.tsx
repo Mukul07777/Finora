@@ -24,13 +24,16 @@ export function Problem() {
       description="Financial infrastructure was built for humans and corporations who can be identified, bound, and held accountable. Autonomous agents are neither — and that breaks lending and spend-control at the same time."
     >
       <div className="grid gap-6 md:grid-cols-2">
-        {CARDS.map((c) => (
+        {CARDS.map((c, idx) => (
           <div
             key={c.tag}
-            className="card-hover group relative overflow-hidden rounded-2xl border border-border bg-surface p-8 transition-colors hover:border-muted"
+            className="card-hover card-premium group relative overflow-hidden rounded-2xl p-8"
           >
+            <span className="font-display text-5xl font-bold text-border transition-colors group-hover:text-surface-2">
+              0{idx + 1}
+            </span>
             <div
-              className={`mb-5 inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-mono uppercase tracking-widest ${c.accentClass}`}
+              className={`mt-5 mb-5 inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-mono uppercase tracking-widest ${c.accentClass}`}
             >
               {c.tag}
             </div>

@@ -62,12 +62,9 @@ export function Features() {
     >
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {FEATURES.map((f) => (
-          <div
-            key={f.title}
-            className="card-hover rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-muted"
-          >
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-              <f.icon size={18} strokeWidth={1.75} />
+          <div key={f.title} className="card-hover card-premium rounded-2xl p-6">
+            <div className="icon-badge mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-accent">
+              <f.icon size={19} strokeWidth={1.75} />
             </div>
             <h3 className="font-display text-sm font-semibold text-foreground">{f.title}</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-muted">{f.body}</p>

@@ -37,7 +37,7 @@ export function Metrics() {
     >
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {METRICS.map((m) => (
-          <div key={m.value} className="card-hover rounded-2xl border border-border bg-surface p-6">
+          <div key={m.value} className="card-hover card-premium rounded-2xl p-6">
             <h3 className="font-display text-sm font-semibold text-accent">{m.value}</h3>
             <p className="mt-3 text-[13px] leading-relaxed text-muted">{m.body}</p>
           </div>

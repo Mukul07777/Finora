@@ -289,6 +289,64 @@ body {
   box-shadow: 0 20px 40px -20px rgba(var(--shadow-tint), 0.18);
 }
 
+/* A card with a soft gradient hairline that only appears on hover —
+   the same 1px border everywhere was the flattest, most repetitive
+   thing about the site; this gives cards weight without needing a
+   different color per section. */
+.card-premium {
+  position: relative;
+  isolation: isolate;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.card-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(125, 255, 179, 0.55), rgba(110, 168, 255, 0.25) 45%, transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.card-premium:hover::before {
+  opacity: 1;
+}
+[data-theme="light"] .card-premium::before {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.4), rgba(67, 56, 202, 0.2) 45%, transparent 75%);
+}
+
+/* Gradient-filled icon badge, used instead of a flat surface-2 square. */
+.icon-badge {
+  background: linear-gradient(135deg, rgba(125, 255, 179, 0.16), rgba(110, 168, 255, 0.1));
+  border: 1px solid rgba(125, 255, 179, 0.22);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card-premium:hover .icon-badge,
+.group:hover .icon-badge {
+  box-shadow: 0 0 24px -4px rgba(125, 255, 179, 0.5);
+  transform: translateY(-2px);
+}
+[data-theme="light"] .icon-badge {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(67, 56, 202, 0.08));
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+/* Alternating section wash, so consecutive sections don't sit on
+   identically flat background — a very subtle top/bottom hairline
+   plus a faint tint. */
+.section-band {
+  background: linear-gradient(180deg, transparent, rgba(125, 255, 179, 0.025) 50%, transparent);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
 .glow-text {
   text-shadow: 0 0 24px rgba(125, 255, 179, 0.45), 0 0 60px rgba(125, 255, 179, 0.25);
 }

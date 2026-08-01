@@ -32,10 +32,10 @@ export function HowItWorks() {
       description="The same policy object that decides how much an agent can borrow is the one that enforces how much it can spend — credit and control are never separate systems."
     >
       <div className="relative grid gap-8 md:grid-cols-4">
-        <div className="pointer-events-none absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block" />
+        <div className="pointer-events-none absolute left-0 right-0 top-7 hidden h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent md:block" />
         {STEPS.map((s) => (
-          <div key={s.n} className="relative">
-            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface font-mono text-sm text-accent">
+          <div key={s.n} className="group relative">
+            <div className="icon-badge mb-5 flex h-14 w-14 items-center justify-center rounded-2xl font-display text-base font-semibold text-accent">
               {s.n}
             </div>
             <h3 className="font-display text-lg font-semibold text-foreground">{s.title}</h3>
