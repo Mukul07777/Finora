@@ -9,7 +9,7 @@ Verifiable identity · real-time reputation · dynamically underwritten credit �
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white)](https://soliditylang.org)
-[![Hardhat](https://img.shields.io/badge/Hardhat-tests%2017%2F17-FFF04D?logo=hardhat&logoColor=black)](onchain)
+[![Hardhat](https://img.shields.io/badge/Hardhat-tests%2024%2F24-FFF04D?logo=hardhat&logoColor=black)](onchain)
 [![License](https://img.shields.io/badge/license-MIT-informational)](#license)
 
 Built for **Innova Hack Chapter-1**, Domain 1 — Fintech.
@@ -49,7 +49,7 @@ Finora is the layer underneath both problems: identity and reputation to make cr
 This isn't a slide deck. Two things actually run:
 
 1. **The site** — a full Next.js app: Home, a live interactive console, Security, Pricing, Docs, About.
-2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 17-test suite and a scripted attack-agent demo that runs real attacks against an in-memory Hardhat EVM (real Solidity execution, no deployment or network required) and prints the actual revert reasons.
+2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 24-test suite and a scripted attack-agent demo that runs real attacks against an in-memory Hardhat EVM (real Solidity execution, no deployment or network required) and prints the actual revert reasons.
 
 ```bash
 cd onchain && npm install && npm run demo:attack
@@ -97,7 +97,7 @@ The same policy object that decides how much an agent can borrow is the one that
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Framer Motion |
 | Shared state | `FinoraProvider` — a `useReducer` store with a pure reducer + async action coordinator, single source of truth for the console and phone demos |
 | Enforcement contract | Solidity 0.8.24, Hardhat, ethers v6, TypeChain |
-| Testing | Mocha/Chai via Hardhat (17 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
+| Testing | Mocha/Chai via Hardhat (24 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
 
 ## Project structure
 
@@ -111,7 +111,7 @@ Finora/
 │     └─ ui/                shared layout primitives
 ├─ onchain/
 │  ├─ contracts/AgentWallet.sol
-│  ├─ test/AgentWallet.test.ts       17 tests: ownership, limits, allowlist, kill switch, in-flight revocation
+│  ├─ test/AgentWallet.test.ts       24 tests: ownership transfer, limits, allowlist, kill switch, in-flight revocation, reentrancy guard
 │  └─ scripts/
 │     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit
 │     └─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
@@ -133,7 +133,7 @@ npm run test:unit      # Vitest — pure reducer unit tests
 ```bash
 cd onchain
 npm install
-npm test              # 17 passing
+npm test              # 24 passing
 npm run demo:attack   # scripted attack agent, live EVM reverts
 ```
 
@@ -145,7 +145,7 @@ Every claim above, checked against what actually runs:
 
 | Claim | Status | Detail |
 |---|---|---|
-| On-chain enforcement logic (limits, allowlist, pause, in-flight revocation) | **Real** | `AgentWallet.sol`, 17/17 tests passing, run it yourself in `/onchain` |
+| On-chain enforcement logic (limits, allowlist, pause, in-flight revocation) | **Real** | `AgentWallet.sol`, 24/24 tests passing, run it yourself in `/onchain` |
 | Attack demo reverts | **Real** | Real Solidity execution on an in-memory Hardhat EVM — not a deployed testnet contract |
 | Console/phone credit, spend, kill-switch flows | **Simulated** | In-browser React state (`FinoraProvider`), no blockchain call. Labeled "Simulation Mode" in the UI |
 | "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |

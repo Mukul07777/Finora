@@ -56,7 +56,7 @@ export default function SecurityPage() {
       <Section
         eyebrow="Shipped, not just described"
         title="The on-chain enforcement layer is real code"
-        description="AgentWallet.sol is a working Solidity contract with a 17-test suite and a scripted attack agent — not a diagram. It lives in this repo's /onchain folder."
+        description="AgentWallet.sol is a working Solidity contract with a 24-test suite and a scripted attack agent — not a diagram. It lives in this repo's /onchain folder."
       >
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="rounded-2xl border border-border bg-surface p-8">
@@ -91,9 +91,24 @@ export default function SecurityPage() {
                 second step revert, even though the first step already succeeded on-chain.
               </li>
               <li>
-                <span className="font-medium text-foreground">17/17 tests passing</span> — ownership,
-                direct payments, the kill switch, in-flight revocation, and funds custody are each
-                covered in <code className="font-mono text-foreground">onchain/test/AgentWallet.test.ts</code>.
+                <span className="font-medium text-foreground">Reentrancy-guarded</span> — every
+                value-moving function (<code className="font-mono text-foreground">directPay</code>,{" "}
+                <code className="font-mono text-foreground">executePayment</code>,{" "}
+                <code className="font-mono text-foreground">withdraw</code>) is protected by a{" "}
+                <code className="font-mono text-foreground">nonReentrant</code> guard, proven by a
+                test that deploys a hostile agent contract and watches its re-entry attempt revert.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Two-step ownership transfer</span> —
+                <code className="font-mono text-foreground"> transferOwnership()</code> /{" "}
+                <code className="font-mono text-foreground">acceptOwnership()</code> means a mistyped
+                or unreachable new owner can never strand the kill switch.
+              </li>
+              <li>
+                <span className="font-medium text-foreground">24/24 tests passing</span> — ownership
+                transfer, direct payments, the kill switch, in-flight revocation, reentrancy, and
+                funds custody are each covered in{" "}
+                <code className="font-mono text-foreground">onchain/test/AgentWallet.test.ts</code>.
               </li>
             </ul>
           </div>
@@ -122,7 +137,12 @@ export default function SecurityPage() {
   ⚠ owner.pause() called — kill switch engaged
 ✓ BLOCKED — execute the already-proposed payment after the freeze
             reason: reverted with custom error 'ContractPaused()'
-            → in-flight revocation confirmed: no funds moved`}
+            → in-flight revocation confirmed: no funds moved
+
+[8] Attack: a malicious agent contract tries to re-enter directPay()
+    from its own receive() hook, mid-payment.
+  reentry attempt made: 1 (reverted by the nonReentrant guard)
+✓ BLOCKED — reentrant call reverted with custom error 'Reentrant()'`}
             </pre>
           </div>
 

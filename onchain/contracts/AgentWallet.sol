@@ -13,6 +13,7 @@ contract AgentWallet {
     // --- Errors -------------------------------------------------------
 
     error NotOwner();
+    error NotPendingOwner();
     error NotAgent();
     error ContractPaused();
     error NotAllowlisted(address to);
@@ -22,13 +23,20 @@ contract AgentWallet {
     error PaymentUnknown(uint256 id);
     error InsufficientBalance(uint256 amount, uint256 balance);
     error ZeroAddress();
+    error Reentrant();
 
     // --- Storage --------------------------------------------------------
 
     address public owner;
+    /// @notice Two-step ownership handoff target. Zero until a transfer is
+    /// in progress. Keeps a typo'd or unreachable new owner from bricking
+    /// the kill switch — the old owner stays in control until the new one
+    /// actively accepts.
+    address public pendingOwner;
     address public agent;
 
     bool public paused;
+    bool private locked;
 
     uint256 public perTxLimit;
     uint256 public dailyLimit;
@@ -51,6 +59,8 @@ contract AgentWallet {
 
     // --- Events -----------------------------------------------------------
 
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event AgentSet(address indexed agent);
     event PolicySet(uint256 perTxLimit, uint256 dailyLimit, uint256 windowDuration);
     event AllowlistUpdated(address indexed to, bool allowed);
@@ -80,6 +90,18 @@ contract AgentWallet {
         _;
     }
 
+    /// @notice Blocks re-entry into any external-call-making function.
+    /// Belt-and-suspenders on top of the checks-effects-interactions
+    /// ordering already used throughout (state is updated before every
+    /// `.call{value: ...}`) — an allowlisted counterparty is trusted to
+    /// receive funds, not trusted to be non-malicious code.
+    modifier nonReentrant() {
+        if (locked) revert Reentrant();
+        locked = true;
+        _;
+        locked = false;
+    }
+
     // --- Constructor --------------------------------------------------------
 
     constructor(address _agent, uint256 _perTxLimit, uint256 _dailyLimit) {
@@ -99,6 +121,25 @@ contract AgentWallet {
     }
 
     // --- Owner controls -----------------------------------------------------
+
+    /// @notice Step 1 of ownership transfer. The old owner keeps full
+    /// control (including the kill switch) until `newOwner` calls
+    /// `acceptOwnership()` — a single wrong address here can't strand
+    /// the contract with an owner who never claims it.
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    /// @notice Step 2 of ownership transfer. Only the proposed new owner
+    /// can complete the handoff.
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        emit OwnershipTransferred(owner, msg.sender);
+        owner = msg.sender;
+        pendingOwner = address(0);
+    }
 
     function setAgent(address _agent) external onlyOwner {
         if (_agent == address(0)) revert ZeroAddress();
@@ -131,7 +172,7 @@ contract AgentWallet {
         emit Unpaused(msg.sender);
     }
 
-    function withdraw(uint256 amount) external onlyOwner {
+    function withdraw(uint256 amount) external onlyOwner nonReentrant {
         if (amount > address(this).balance) revert InsufficientBalance(amount, address(this).balance);
         (bool ok, ) = owner.call{value: amount}("");
         require(ok, "withdraw failed");
@@ -141,7 +182,7 @@ contract AgentWallet {
     // --- Agent spend path: direct (single step) ---------------------------
 
     /// @notice Single-step payment for normal, in-policy spending.
-    function directPay(address to, uint256 amount) external onlyAgent whenNotPaused {
+    function directPay(address to, uint256 amount) external onlyAgent whenNotPaused nonReentrant {
         _checkAllowlist(to);
         _checkPerTx(amount);
         _consumeDailyLimit(amount);
@@ -165,7 +206,7 @@ contract AgentWallet {
         emit PaymentProposed(id, to, amount);
     }
 
-    function executePayment(uint256 id) external onlyAgent whenNotPaused {
+    function executePayment(uint256 id) external onlyAgent whenNotPaused nonReentrant {
         PendingPayment storage p = pendingPayments[id];
         if (p.to == address(0)) revert PaymentUnknown(id);
         if (p.executed || p.cancelled) revert PaymentAlreadyFinalized(id);
@@ -193,6 +234,7 @@ contract AgentWallet {
     // --- Internal ------------------------------------------------------------
 
     function _checkAllowlist(address to) internal view {
+        if (to == address(0)) revert ZeroAddress();
         if (!allowlist[to]) revert NotAllowlisted(to);
     }
 

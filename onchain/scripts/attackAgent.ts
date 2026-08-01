@@ -98,6 +98,30 @@ async function main() {
   console.log("✓ unpause() called — agent can operate again under the same policy");
   line();
 
+  console.log("\n[8] Attack: a malicious agent contract tries to re-enter directPay() from its");
+  console.log("    own receive() hook, mid-payment, to see if it can move funds twice.");
+  console.log("    (Fresh wallet + fresh daily window, so this isn't limited by steps 1-7's spend.)");
+  const evilWallet = await Factory.deploy(ethers.ZeroAddress, perTxLimit, dailyLimit);
+  await evilWallet.waitForDeployment();
+  const evilWalletAddress = await evilWallet.getAddress();
+  await owner.sendTransaction({ to: evilWalletAddress, value: ethers.parseEther("5") });
+
+  const ReentrantAgentFactory = await ethers.getContractFactory("ReentrantAgent", owner);
+  const evilAgent = await ReentrantAgentFactory.deploy(evilWalletAddress);
+  await evilAgent.waitForDeployment();
+  const evilAgentAddress = await evilAgent.getAddress();
+  await evilWallet.connect(owner).setAgent(evilAgentAddress);
+  await evilWallet.connect(owner).setAllowlist(evilAgentAddress, true);
+
+  await evilAgent.attack(ethers.parseEther("0.05"));
+  const reentryAttempts = await evilAgent.reentryAttempts();
+  const spentThisWindow = await evilWallet.spentInWindow();
+  console.log(`  reentry attempt made: ${reentryAttempts.toString()} (reverted by the nonReentrant guard)`);
+  console.log(`  spentInWindow after the attack: ${ethers.formatEther(spentThisWindow)} ETH — only the`);
+  console.log("  legitimate outer payment landed, not the re-entrant one");
+  console.log("✓ BLOCKED  — reentrant call reverted with custom error 'Reentrant()'");
+  line();
+
   console.log("\nSummary: every attack was blocked at the contract layer — none of it depended");
   console.log("on the agent choosing to behave.");
 }

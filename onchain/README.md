@@ -14,16 +14,23 @@ Enforced on-chain, independent of the agent:
 - **In-flight revocation** — a payment proposed via `proposePayment()` can still be
   killed by `pause()` before its matching `executePayment()` runs, even though the
   first step already succeeded on-chain
+- **Reentrancy guard** on every value-moving function (`directPay`, `executePayment`,
+  `withdraw`) — belt-and-suspenders on top of checks-effects-interactions ordering
+- **Two-step ownership transfer** (`transferOwnership` / `acceptOwnership`) — a typo'd
+  or unreachable new owner can't strand the kill switch; the old owner stays fully in
+  control until the new one actively accepts
+- **Zero-address guard** on payment destinations, agent assignment, and ownership transfer
 
 ## Layout
 
 ```
 onchain/
-  contracts/AgentWallet.sol   the contract
-  test/AgentWallet.test.ts    17 tests covering every rule above
-  scripts/deploy.ts           deploy + seed a demo policy/allowlist/deposit
-  scripts/attackAgent.ts      scripted attack narration — every attempt to
-                               break policy, run against a real EVM
+  contracts/AgentWallet.sol            the contract
+  contracts/test-helpers/              malicious contracts used only to prove attacks fail
+  test/AgentWallet.test.ts             24 tests covering every rule above
+  scripts/deploy.ts                    deploy + seed a demo policy/allowlist/deposit
+  scripts/attackAgent.ts               scripted attack narration — every attempt to
+                                        break policy, run against a real EVM
 ```
 
 ## Run it yourself
@@ -31,7 +38,7 @@ onchain/
 ```bash
 cd onchain
 npm install
-npm test              # 17 passing — every enforcement rule, proven
+npm test              # 24 passing — every enforcement rule, proven
 npm run demo:attack   # scripted attack agent vs. the contract, live reverts
 ```
 
@@ -41,6 +48,21 @@ address reverting, a payment over the per-tx cap reverting, split payments
 hitting the daily cap, and — the interesting one — the owner freezing the
 agent *between* `proposePayment()` and `executePayment()`, proving the
 pending payment cannot complete once frozen.
+
+## Deliberately out of scope: EIP-712 / nonce-based replay protection
+
+The agent calls `directPay` / `proposePayment` / `executePayment` directly,
+as `msg.sender == agent` — there's no meta-transaction relayer and no
+off-chain-signed payload for anyone to replay. Replay protection matters
+when a *signature* authorizes an action that a third party then relays;
+here the transaction itself is the authorization, submitted by the session
+key. The actual trust boundary is the session key, and it's already
+revocable in one owner transaction (`setAgent`, or the blanket `pause`).
+
+Adding EIP-712 signed intents would matter if a future version lets the
+agent construct payments off-chain for a relayer to submit gaslessly —
+that's a real feature, not a hardening gap in the current design, so it's
+left for a later phase rather than bolted on here.
 
 ## Deploying to a public testnet (Base Sepolia)
 

@@ -49,6 +49,51 @@ describe("AgentWallet", () => {
         "NotOwner"
       );
     });
+
+    it("rejects setting the agent to the zero address", async () => {
+      await expect(wallet.connect(owner).setAgent(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        wallet,
+        "ZeroAddress"
+      );
+    });
+  });
+
+  describe("ownership transfer — two-step, so a bad address can't brick the kill switch", () => {
+    it("keeps the old owner in full control until the new owner accepts", async () => {
+      await wallet.connect(owner).transferOwnership(stranger.address);
+      expect(await wallet.owner()).to.equal(owner.address); // unchanged — pending only
+      expect(await wallet.pendingOwner()).to.equal(stranger.address);
+
+      // old owner can still pause — nothing was handed over yet
+      await expect(wallet.connect(owner).pause()).to.not.be.reverted;
+    });
+
+    it("only the pending owner can accept", async () => {
+      await wallet.connect(owner).transferOwnership(stranger.address);
+      await expect(wallet.connect(agent).acceptOwnership()).to.be.revertedWithCustomError(
+        wallet,
+        "NotPendingOwner"
+      );
+
+      await wallet.connect(stranger).acceptOwnership();
+      expect(await wallet.owner()).to.equal(stranger.address);
+      expect(await wallet.pendingOwner()).to.equal(ethers.ZeroAddress);
+
+      // old owner has lost control — the handoff is real
+      await expect(wallet.connect(owner).pause()).to.be.revertedWithCustomError(wallet, "NotOwner");
+    });
+
+    it("rejects transferring ownership to the zero address", async () => {
+      await expect(
+        wallet.connect(owner).transferOwnership(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(wallet, "ZeroAddress");
+    });
+
+    it("only the current owner can initiate a transfer", async () => {
+      await expect(
+        wallet.connect(stranger).transferOwnership(stranger.address)
+      ).to.be.revertedWithCustomError(wallet, "NotOwner");
+    });
   });
 
   describe("direct payments — the agent's own logic never gets a vote", () => {
@@ -94,6 +139,12 @@ describe("AgentWallet", () => {
       await expect(
         wallet.connect(agent).directPay(vendor.address, ethers.parseEther("0.1"))
       ).to.be.revertedWithCustomError(wallet, "ContractPaused");
+    });
+
+    it("blocks a payment to the zero address even if amount and policy are fine", async () => {
+      await expect(
+        wallet.connect(agent).directPay(ethers.ZeroAddress, 1n)
+      ).to.be.revertedWithCustomError(wallet, "ZeroAddress");
     });
   });
 
@@ -170,6 +221,29 @@ describe("AgentWallet", () => {
         wallet,
         "PaymentAlreadyFinalized"
       );
+    });
+  });
+
+  describe("reentrancy guard", () => {
+    it("blocks a malicious agent from re-entering directPay() from its own receive() hook", async () => {
+      const ReentrantAgentFactory = await ethers.getContractFactory("ReentrantAgent");
+      const evilAgent = await ReentrantAgentFactory.deploy(await wallet.getAddress());
+      await evilAgent.waitForDeployment();
+      const evilAddr = await evilAgent.getAddress();
+
+      await wallet.connect(owner).setAgent(evilAddr);
+      await wallet.connect(owner).setAllowlist(evilAddr, true);
+
+      const amount = ethers.parseEther("0.1");
+      await evilAgent.attack(amount);
+
+      expect(await evilAgent.attacked()).to.equal(true);
+      expect(await evilAgent.reentryAttempts()).to.equal(1n);
+
+      // Only the outer payment landed — the re-entrant 1-wei call was
+      // reverted by nonReentrant, not silently absorbed.
+      expect(await wallet.spentInWindow()).to.equal(amount);
+      expect(await ethers.provider.getBalance(evilAddr)).to.equal(amount);
     });
   });
 
