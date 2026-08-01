@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Section } from "@/components/ui/Section";
+import { Accordion } from "@/components/ui/Accordion";
 import { CTA } from "@/components/CTA";
 
 export const metadata: Metadata = {
@@ -136,14 +137,7 @@ export default function PricingPage() {
       </Section>
 
       <Section eyebrow="FAQ" title="Common questions">
-        <div className="mx-auto max-w-2xl divide-y divide-border">
-          {FAQ.map((f) => (
-            <div key={f.q} className="py-6">
-              <h3 className="font-display text-sm font-semibold text-foreground">{f.q}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{f.a}</p>
-            </div>
-          ))}
-        </div>
+        <Accordion items={FAQ} />
       </Section>
 
       <CTA />

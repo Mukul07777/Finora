@@ -28,21 +28,26 @@ const toneClass: Record<Line["tone"], string> = {
   muted: "text-muted",
 };
 
+type VisibleLine = Line & { key: number };
+
 export function HeroTerminal() {
-  const [visible, setVisible] = useState<Line[]>([]);
-  const [i, setI] = useState(0);
+  const [visible, setVisible] = useState<VisibleLine[]>([]);
 
   useEffect(() => {
+    let scriptIndex = 0;
+    let lineKey = 0;
+
     const id = setInterval(() => {
-      setI((prev) => {
-        const next = (prev + 1) % SCRIPT.length;
-        setVisible((v) => {
-          const updated = [...v, SCRIPT[prev]];
-          return updated.length > 7 ? updated.slice(updated.length - 7) : updated;
-        });
-        return next;
+      const nextLine = { ...SCRIPT[scriptIndex % SCRIPT.length], key: lineKey };
+      scriptIndex += 1;
+      lineKey += 1;
+
+      setVisible((v) => {
+        const updated = [...v, nextLine];
+        return updated.length > 7 ? updated.slice(updated.length - 7) : updated;
       });
     }, 1400);
+
     return () => clearInterval(id);
   }, []);
 
@@ -59,8 +64,8 @@ export function HeroTerminal() {
         </span>
       </div>
       <div className="h-[260px] space-y-1.5 overflow-hidden px-4 py-4 font-mono text-[12.5px] leading-relaxed">
-        {visible.map((line, idx) => (
-          <div key={idx} className={`${toneClass[line.tone]} whitespace-pre-wrap`}>
+        {visible.map((line) => (
+          <div key={line.key} className={`${toneClass[line.tone]} whitespace-pre-wrap`}>
             {line.text}
           </div>
         ))}

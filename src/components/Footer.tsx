@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "./Logo";
 
 const COLUMNS = [
   {
@@ -25,15 +26,7 @@ export function Footer() {
       <div className="mx-auto w-full max-w-7xl px-6 py-14 sm:px-8">
         <div className="grid gap-10 sm:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-2">
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded-md font-display text-sm font-bold text-white"
-                style={{ background: "linear-gradient(135deg, #059669, #4338ca)" }}
-              >
-                F
-              </span>
-              <span className="font-display text-lg font-semibold text-foreground">Finora</span>
-            </div>
+            <Logo />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
               The financial operating system for autonomous agents — verifiable identity,
               real-time reputation, dynamic credit, and a wallet-layer kill switch.
