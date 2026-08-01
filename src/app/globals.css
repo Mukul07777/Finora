@@ -353,3 +353,24 @@ body {
 [data-theme="light"] .glow-text {
   text-shadow: none;
 }
+
+/* Diagonal light sweep on hover — for solid accent-colored primary CTAs
+   only (needs a light sweep against a saturated fill to read). */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.btn-shine:hover::after {
+  left: 130%;
+}

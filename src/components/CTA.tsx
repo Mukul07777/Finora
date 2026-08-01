@@ -28,7 +28,7 @@ export function CTA({
           <p className="mx-auto mt-4 max-w-xl text-muted">{body}</p>
           <Link
             href={ctaHref}
-            className="mt-8 inline-block rounded-full bg-accent px-7 py-3 text-sm font-semibold text-on-accent transition-transform hover:scale-[1.03]"
+            className="btn-shine mt-8 inline-block rounded-full bg-accent px-7 py-3 text-sm font-semibold text-on-accent transition-transform hover:scale-[1.03]"
           >
             {ctaLabel}
           </Link>

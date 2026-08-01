@@ -39,9 +39,9 @@ export default function SecurityPage() {
       >
         <div className="grid gap-6 md:grid-cols-3">
           {THREATS.map((t) => (
-            <div key={t.title} className="card-hover rounded-2xl border border-border bg-surface p-6">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
-                <t.icon size={18} strokeWidth={1.75} />
+            <div key={t.title} className="card-hover card-premium rounded-2xl p-6">
+              <div className="icon-badge mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-accent">
+                <t.icon size={19} strokeWidth={1.75} />
               </div>
               <h3 className="font-display text-sm font-semibold text-foreground">{t.title}</h3>
               <p className="mt-2 text-[13px] leading-relaxed text-muted">{t.body}</p>
@@ -59,10 +59,10 @@ export default function SecurityPage() {
         description="AgentWallet.sol is a working Solidity contract with a 24-test suite and a scripted attack agent — not a diagram. It lives in this repo's /onchain folder."
       >
         <div className="mx-auto max-w-3xl space-y-6">
-          <div className="rounded-2xl border border-border bg-surface p-8">
+          <div className="card-premium rounded-2xl p-8">
             <div className="mb-5 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
-                <GitBranch size={18} strokeWidth={1.75} />
+              <span className="icon-badge flex h-11 w-11 items-center justify-center rounded-xl text-accent-2">
+                <GitBranch size={19} strokeWidth={1.75} />
               </span>
               <h3 className="font-display text-base font-semibold text-foreground">
                 AgentWallet.sol — session-key smart wallet

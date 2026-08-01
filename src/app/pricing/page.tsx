@@ -92,10 +92,10 @@ export default function PricingPage() {
           {TIERS.map((t) => (
             <div
               key={t.name}
-              className={`card-hover relative rounded-2xl border p-8 ${
+              className={`card-hover relative rounded-2xl p-8 ${
                 t.highlighted
-                  ? "glow-accent border-accent/40 bg-surface"
-                  : "border-border bg-surface"
+                  ? "glow-accent border border-accent/40 bg-surface"
+                  : "card-premium"
               }`}
             >
               {t.highlighted && (
@@ -125,7 +125,7 @@ export default function PricingPage() {
                 href="/console"
                 className={`mt-8 block rounded-full px-5 py-3 text-center text-sm font-semibold transition-transform hover:scale-[1.02] ${
                   t.highlighted
-                    ? "bg-accent text-on-accent"
+                    ? "btn-shine bg-accent text-on-accent"
                     : "border border-border text-foreground hover:border-muted"
                 }`}
               >
