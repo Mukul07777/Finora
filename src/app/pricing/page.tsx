@@ -91,7 +91,7 @@ export default function PricingPage() {
           {TIERS.map((t) => (
             <div
               key={t.name}
-              className={`relative rounded-2xl border p-8 ${
+              className={`card-hover relative rounded-2xl border p-8 ${
                 t.highlighted
                   ? "glow-accent border-accent/40 bg-surface"
                   : "border-border bg-surface"

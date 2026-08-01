@@ -113,7 +113,8 @@ body {
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
 }
-.dark-scope .grid-bg {
+.dark-scope .grid-bg,
+.dark-scope.grid-bg {
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
@@ -130,21 +131,24 @@ body {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
-.dark-scope .glass {
-  background: rgba(16, 19, 27, 0.6);
+.dark-scope .glass,
+.dark-scope.glass {
+  background: rgba(9, 11, 18, 0.94);
 }
 
 .glow-accent {
   box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.16), 0 16px 40px -14px rgba(5, 150, 105, 0.4);
 }
-.dark-scope .glow-accent {
+.dark-scope .glow-accent,
+.dark-scope.glow-accent {
   box-shadow: 0 0 0 1px rgba(125, 255, 179, 0.15), 0 0 40px -10px rgba(125, 255, 179, 0.35);
 }
 
 .glow-danger {
   box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.18), 0 16px 40px -14px rgba(220, 38, 38, 0.35);
 }
-.dark-scope .glow-danger {
+.dark-scope .glow-danger,
+.dark-scope.glow-danger {
   box-shadow: 0 0 0 1px rgba(255, 92, 108, 0.25), 0 0 40px -8px rgba(255, 92, 108, 0.45);
 }
 
@@ -154,7 +158,8 @@ body {
   background-clip: text;
   color: transparent;
 }
-.dark-scope .text-gradient {
+.dark-scope .text-gradient,
+.dark-scope.text-gradient {
   background: linear-gradient(90deg, #7dffb3 0%, #6ea8ff 50%, #a78bfa 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -191,4 +196,43 @@ body {
 }
 .animate-blink {
   animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(14px, -22px); }
+}
+.animate-float-slow {
+  animation: float-slow 9s ease-in-out infinite;
+}
+
+@keyframes float-slower {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-18px, 18px); }
+}
+.animate-float-slower {
+  animation: float-slower 12s ease-in-out infinite;
+}
+
+@keyframes float-card {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float-card {
+  animation: float-card 6s ease-in-out infinite;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -20px rgba(var(--shadow-tint), 0.18);
 }

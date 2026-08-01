@@ -59,7 +59,7 @@ export default function AboutPage() {
       <Section eyebrow="What we believe" title="Principles behind the build">
         <div className="grid gap-6 sm:grid-cols-2">
           {VALUES.map((v) => (
-            <div key={v.title} className="rounded-2xl border border-border bg-surface p-6">
+            <div key={v.title} className="card-hover rounded-2xl border border-border bg-surface p-6">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
                 <v.icon size={18} strokeWidth={1.75} />
               </div>

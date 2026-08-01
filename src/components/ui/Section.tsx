@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Reveal } from "./Reveal";
 
 export function Section({
   id,
@@ -18,7 +19,7 @@ export function Section({
   return (
     <section id={id} className={`relative mx-auto w-full max-w-7xl px-6 py-24 sm:px-8 ${className}`}>
       {(eyebrow || title || description) && (
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+        <Reveal className="mx-auto mb-14 max-w-2xl text-center">
           {eyebrow && (
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-mono uppercase tracking-widest text-accent">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -31,9 +32,9 @@ export function Section({
             </h2>
           )}
           {description && <p className="mt-4 text-base text-muted">{description}</p>}
-        </div>
+        </Reveal>
       )}
-      {children}
+      <Reveal delay={0.1}>{children}</Reveal>
     </section>
   );
 }

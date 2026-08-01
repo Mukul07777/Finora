@@ -39,7 +39,7 @@ export default function SecurityPage() {
       >
         <div className="grid gap-6 md:grid-cols-3">
           {THREATS.map((t) => (
-            <div key={t.title} className="rounded-2xl border border-border bg-surface p-6">
+            <div key={t.title} className="card-hover rounded-2xl border border-border bg-surface p-6">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent">
                 <t.icon size={18} strokeWidth={1.75} />
               </div>

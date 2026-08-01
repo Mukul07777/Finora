@@ -27,7 +27,7 @@ export function Problem() {
         {CARDS.map((c) => (
           <div
             key={c.tag}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-surface p-8 transition-colors hover:border-muted"
+            className="card-hover group relative overflow-hidden rounded-2xl border border-border bg-surface p-8 transition-colors hover:border-muted"
           >
             <div
               className={`mb-5 inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs font-mono uppercase tracking-widest ${c.accentClass}`}
