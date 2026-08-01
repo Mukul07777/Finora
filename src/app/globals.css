@@ -141,7 +141,10 @@ body {
 }
 .dark-scope .glow-accent,
 .dark-scope.glow-accent {
-  box-shadow: 0 0 0 1px rgba(125, 255, 179, 0.15), 0 0 40px -10px rgba(125, 255, 179, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(125, 255, 179, 0.18),
+    0 0 60px -6px rgba(125, 255, 179, 0.45),
+    0 0 160px -20px rgba(125, 255, 179, 0.35);
 }
 
 .glow-danger {

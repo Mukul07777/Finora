@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { HeroTerminal } from "./HeroTerminal";
+import { CountUp } from "./ui/CountUp";
+import { ParticleMesh } from "./ui/ParticleMesh";
 
 const container = {
   hidden: {},
@@ -82,16 +85,25 @@ export function Hero() {
             variants={item}
             className="mt-14 grid grid-cols-3 gap-6 border-t border-border pt-8 sm:max-w-lg"
           >
-            <Stat value="96%" label="predicted repayment" />
-            <Stat value="<80ms" label="policy enforcement" />
-            <Stat value="0" label="signed contracts needed" />
+            <Stat value={<CountUp value={96} suffix="%" />} label="predicted repayment" />
+            <Stat
+              value={
+                <>
+                  &lt;
+                  <CountUp value={80} suffix="ms" />
+                </>
+              }
+              label="policy enforcement"
+            />
+            <Stat value={<CountUp value={0} />} label="signed contracts needed" />
           </motion.div>
         </div>
 
         <motion.div
           variants={item}
-          className="flex justify-center lg:justify-end"
+          className="relative flex justify-center lg:justify-end"
         >
+          <ParticleMesh className="pointer-events-none absolute -right-10 -top-14 h-40 w-64 opacity-80" />
           <div className="animate-float-card">
             <HeroTerminal />
           </div>
@@ -101,7 +113,7 @@ export function Hero() {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: { value: ReactNode; label: string }) {
   return (
     <div>
       <div className="font-display text-2xl font-semibold text-foreground">{value}</div>
