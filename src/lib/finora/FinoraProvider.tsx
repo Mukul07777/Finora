@@ -13,7 +13,8 @@ import {
 import { finoraReducer, initialFinoraState } from "./reducer";
 import { FinoraAdapter, isAbortError } from "./adapter";
 import { simulationAdapter } from "./adapters/simulationAdapter";
-import { FinoraState } from "./types";
+import { computeCreditTerms, computeRogueScorePenalty } from "./scoring";
+import { FinoraState, Tx } from "./types";
 
 function timeNow() {
   return new Date().toLocaleTimeString("en-IN", { hour12: false });
@@ -23,6 +24,10 @@ let idCounter = 0;
 function nextId(prefix: string) {
   idCounter += 1;
   return `${prefix}_${idCounter}_${Date.now()}`;
+}
+
+function buildTx(fields: Omit<Tx, "id" | "time" | "timestamp">): Tx {
+  return { ...fields, id: nextId("tx"), time: timeNow(), timestamp: Date.now() };
 }
 
 interface FinoraActions {
@@ -79,19 +84,19 @@ export function FinoraProvider({
 
     try {
       const signal = controllerRef.current!.signal;
-      const approval = await adapter.requestCredit(
-        (step) => dispatch({ type: "CREDIT_UNDERWRITING_STEP", step }),
-        signal
-      );
+      await adapter.requestCredit((step) => dispatch({ type: "CREDIT_UNDERWRITING_STEP", step }), signal);
+
+      // Terms are computed by the reducer from current score — mirror that
+      // same computation here only to word the notification; the applied
+      // values are whatever the reducer derives, not this one.
+      const terms = computeCreditTerms(stateRef.current.score);
       dispatch({
         type: "CREDIT_APPROVED",
-        limit: approval.limit,
-        apr: approval.apr,
         notification: {
           id: nextId("notif"),
           tone: "ok",
           title: "Credit approved",
-          body: `₹${approval.limit.toLocaleString("en-IN")} line issued at ${approval.apr}% APR`,
+          body: `₹${terms.limit.toLocaleString("en-IN")} line issued at ${terms.apr}% APR`,
           time: timeNow(),
         },
       });
@@ -110,15 +115,13 @@ export function FinoraProvider({
       if (!result.allowed) {
         dispatch({
           type: "PAYMENT_BLOCKED",
-          tx: {
-            id: nextId("tx"),
-            time: timeNow(),
+          tx: buildTx({
             label: "Payment attempt",
             counterparty: result.merchant,
             amount: result.amount,
             status: "blocked",
             note: result.reason ?? "Blocked by policy",
-          },
+          }),
           notification: {
             id: nextId("notif"),
             tone: "warn",
@@ -133,15 +136,13 @@ export function FinoraProvider({
       dispatch({
         type: "PAYMENT_APPROVED",
         amount: result.amount,
-        tx: {
-          id: nextId("tx"),
-          time: timeNow(),
+        tx: buildTx({
           label: "Task expense",
           counterparty: result.merchant,
           amount: result.amount,
           status: "approved",
           note: "Within policy · counterparty allowlisted",
-        },
+        }),
       });
     } catch (err) {
       if (!isAbortError(err)) throw err;
@@ -154,22 +155,22 @@ export function FinoraProvider({
 
     try {
       const result = await adapter.attemptRoguePayment(s, controllerRef.current!.signal);
+      const risk = result.risk ?? 0.6;
       dispatch({
         type: "ROGUE_BLOCKED",
-        tx: {
-          id: nextId("tx"),
-          time: timeNow(),
+        scoreDelta: computeRogueScorePenalty(risk),
+        tx: buildTx({
           label: "Payment attempt",
           counterparty: result.merchant,
           amount: result.amount,
           status: "blocked",
           note: result.reason ?? "Blocked by policy",
-        },
+        }),
         notification: {
           id: nextId("notif"),
           tone: "danger",
           title: "Security alert",
-          body: "Anomaly detected — spend velocity spike (risk 0.91)",
+          body: `Anomaly detected — spend velocity spike (risk ${risk.toFixed(2)})`,
           time: timeNow(),
         },
       });
@@ -187,15 +188,13 @@ export function FinoraProvider({
       dispatch({
         type: "FREEZE_TOGGLED",
         tx: willFreeze
-          ? {
-              id: nextId("tx"),
-              time: timeNow(),
+          ? buildTx({
               label: "In-flight transfer",
               counterparty: "api.compute.gpu",
               amount: 260,
               status: "cancelled",
               note: "Cancelled mid-execution by owner kill switch",
-            }
+            })
           : null,
         notification: {
           id: nextId("notif"),
@@ -218,15 +217,13 @@ export function FinoraProvider({
       const result = await adapter.completeJob(s, controllerRef.current!.signal);
       dispatch({
         type: "JOB_COMPLETED",
-        tx: {
-          id: nextId("tx"),
-          time: timeNow(),
+        tx: buildTx({
           label: "Task revenue received",
           counterparty: "client.settlement",
           amount: result.revenue,
           status: "repayment",
           note: `Auto-repaid outstanding balance of ₹${s.balance.toLocaleString("en-IN")}`,
-        },
+        }),
         notification: {
           id: nextId("notif"),
           tone: "ok",

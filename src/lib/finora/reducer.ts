@@ -1,12 +1,13 @@
+import { computeCreditTerms } from "./scoring";
 import { FinoraState, Notification, Tx } from "./types";
 
 export type FinoraAction =
   | { type: "CREDIT_REQUEST_STARTED" }
   | { type: "CREDIT_UNDERWRITING_STEP"; step: number }
-  | { type: "CREDIT_APPROVED"; limit: number; apr: number; notification: Notification }
+  | { type: "CREDIT_APPROVED"; notification: Notification }
   | { type: "PAYMENT_BLOCKED"; tx: Tx; notification: Notification }
   | { type: "PAYMENT_APPROVED"; tx: Tx; amount: number }
-  | { type: "ROGUE_BLOCKED"; tx: Tx; notification: Notification }
+  | { type: "ROGUE_BLOCKED"; tx: Tx; notification: Notification; scoreDelta: number }
   | { type: "FREEZE_TOGGLED"; tx: Tx | null; notification: Notification }
   | { type: "JOB_COMPLETED"; tx: Tx; notification: Notification };
 
@@ -30,13 +31,24 @@ function pushNotification(notifications: Notification[], notification: Notificat
   return [notification, ...notifications].slice(0, 20);
 }
 
+// Credit terms are a live function of score, not a value fixed at
+// approval — recomputed here whenever score moves, so limit/APR only
+// come from computeCreditTerms(), never from the action payload.
+function withRecomputedTerms(state: FinoraState, newScore: number): Pick<FinoraState, "limit" | "apr"> {
+  if (state.creditStatus !== "approved") return { limit: state.limit, apr: state.apr };
+  return computeCreditTerms(newScore);
+}
+
 function assertNever(x: never): never {
   throw new Error(`Unhandled Finora action: ${JSON.stringify(x)}`);
 }
 
 // Pure by design: no timers, randomness, or Date.now — those live in
-// FinoraProvider's action coordinator, which builds fully-formed Tx /
-// Notification objects before dispatching them here.
+// FinoraProvider's action coordinator and simulationAdapter, which build
+// fully-formed Tx / Notification objects (and compute risk/deltas) before
+// dispatching here. computeCreditTerms is the one exception: it's a pure
+// function of score, so calling it directly in the reducer is safe and
+// keeps "terms always match current score" a reducer-level invariant.
 export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraState {
   switch (action.type) {
     case "CREDIT_REQUEST_STARTED":
@@ -45,14 +57,16 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
     case "CREDIT_UNDERWRITING_STEP":
       return { ...state, underwritingStep: action.step };
 
-    case "CREDIT_APPROVED":
+    case "CREDIT_APPROVED": {
+      const terms = computeCreditTerms(state.score);
       return {
         ...state,
         creditStatus: "approved",
-        limit: action.limit,
-        apr: action.apr,
+        limit: terms.limit,
+        apr: terms.apr,
         notifications: pushNotification(state.notifications, action.notification),
       };
+    }
 
     case "PAYMENT_BLOCKED":
       return {
@@ -68,13 +82,16 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
         txs: pushTx(state.txs, action.tx),
       };
 
-    case "ROGUE_BLOCKED":
+    case "ROGUE_BLOCKED": {
+      const newScore = Math.max(40, state.score - action.scoreDelta);
       return {
         ...state,
-        score: Math.max(40, state.score - 4),
+        score: newScore,
+        ...withRecomputedTerms(state, newScore),
         txs: pushTx(state.txs, action.tx),
         notifications: pushNotification(state.notifications, action.notification),
       };
+    }
 
     case "FREEZE_TOGGLED":
       return {
@@ -84,14 +101,17 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
         notifications: pushNotification(state.notifications, action.notification),
       };
 
-    case "JOB_COMPLETED":
+    case "JOB_COMPLETED": {
+      const newScore = Math.min(99, state.score + 2);
       return {
         ...state,
         balance: 0,
-        score: Math.min(99, state.score + 2),
+        score: newScore,
+        ...withRecomputedTerms(state, newScore),
         txs: pushTx(state.txs, action.tx),
         notifications: pushNotification(state.notifications, action.notification),
       };
+    }
 
     default:
       return assertNever(action);

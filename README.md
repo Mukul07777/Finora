@@ -152,9 +152,10 @@ Every claim above, checked against what actually runs:
 | "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |
 | REST API (`/docs`) | **Not live** | Describes the planned API shape; `api.finora.dev` does not resolve |
 | Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable during judging — see `onchain/README.md` for how to deploy it |
-| Reputation score / underwriting numbers | **Hardcoded** | Fixed demo values (e.g. score 82, ₹8,200 @ 14.2%), not calculated from real signals |
+| Starting reputation score | **Seeded** | Every session starts at score 82 — a bootstrap value, since there's no real history yet |
+| Credit limit / APR | **Computed** | `computeCreditTerms(score)` — a real formula, recalculated live whenever score changes (job completions, rogue attempts), not fixed once at approval |
 | The "agent" | **Scripted** | State-driven UI logic, not a tool-calling LLM |
-| Anomaly detection | **Fixed adjustment** | A hardcoded score delta on the rogue-spend demo action, not a trained model |
+| Anomaly / velocity risk | **Heuristic, computed** | `computeVelocityRisk()` derives a risk value from this session's actual transaction timestamps (more recent activity → higher risk) — hand-tuned, not a trained model, but not a fixed number either |
 
 Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Planned API — Not Currently Live") match this table.
 

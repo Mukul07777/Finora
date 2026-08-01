@@ -1,4 +1,5 @@
-import { CreditApproval, FinoraAdapter, FreezeResult, JobCompletion, PaymentAttempt } from "../adapter";
+import { FinoraAdapter, FreezeResult, JobCompletion, PaymentAttempt } from "../adapter";
+import { computeVelocityRisk } from "../scoring";
 import { ALLOWLIST, FinoraState, UNDERWRITING_STEPS } from "../types";
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
@@ -40,8 +41,6 @@ export const simulationAdapter: FinoraAdapter = {
       onStep(i);
     }
     await delay(650, signal);
-    const approval: CreditApproval = { limit: 8200, apr: 14.2 };
-    return approval;
   },
 
   async attemptPayment(state, signal) {
@@ -49,13 +48,15 @@ export const simulationAdapter: FinoraAdapter = {
     return evaluatePayment(state);
   },
 
-  async attemptRoguePayment(_state, signal) {
+  async attemptRoguePayment(state, signal) {
     await delay(350, signal);
+    const risk = computeVelocityRisk(state.txs, Date.now());
     const attempt: PaymentAttempt = {
       merchant: "wallet_x02.unknown",
       amount: 4000,
       allowed: false,
       reason: "Blocked — counterparty not allowlisted",
+      risk,
     };
     return attempt;
   },

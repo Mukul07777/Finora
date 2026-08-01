@@ -9,17 +9,14 @@ import { FinoraState } from "./types";
  * coordinator's dispatch shape, and every UI component stay identical —
  * only the adapter changes.
  */
-export interface CreditApproval {
-  limit: number;
-  apr: number;
-}
-
 export interface PaymentAttempt {
   merchant: string;
   amount: number;
   allowed: boolean;
   /** Human-readable reason, required when allowed is false. */
   reason?: string;
+  /** 0-1 assessed risk, present on rogue/anomalous attempts. Drives the score penalty and notification copy — see scoring.ts. */
+  risk?: number;
 }
 
 export interface FreezeResult {
@@ -31,8 +28,13 @@ export interface JobCompletion {
 }
 
 export interface FinoraAdapter {
-  /** Resolves once underwriting finishes; calls onStep as each stage completes. */
-  requestCredit(onStep: (step: number) => void, signal?: AbortSignal): Promise<CreditApproval>;
+  /**
+   * Resolves once underwriting finishes; calls onStep as each stage
+   * completes. Returns nothing — the actual limit/APR are a pure
+   * function of the agent's current score (see scoring.ts), computed by
+   * the reducer, not decided by the adapter.
+   */
+  requestCredit(onStep: (step: number) => void, signal?: AbortSignal): Promise<void>;
   attemptPayment(state: FinoraState, signal?: AbortSignal): Promise<PaymentAttempt>;
   attemptRoguePayment(state: FinoraState, signal?: AbortSignal): Promise<PaymentAttempt>;
   toggleFreeze(state: FinoraState, signal?: AbortSignal): Promise<FreezeResult>;

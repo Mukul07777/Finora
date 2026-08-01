@@ -3,6 +3,8 @@ export type TxStatus = "approved" | "blocked" | "cancelled" | "repayment";
 export interface Tx {
   id: string;
   time: string;
+  /** Epoch ms — used for velocity-based anomaly detection, separate from the display-only `time` string. */
+  timestamp: number;
   label: string;
   counterparty: string;
   amount: number;
