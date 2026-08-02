@@ -8,7 +8,7 @@ import { Tx } from "./types";
  * at approval time.
  *
  * Tuned so the default starting score (82) lands close to the old fixed
- * demo numbers (₹8,200 @ 14.2%) — the terms now move from there instead
+ * demo numbers ($8,200 @ 14.2%) — the terms now move from there instead
  * of just replaying the same two numbers forever.
  */
 export function computeCreditTerms(score: number): { limit: number; apr: number } {
@@ -33,4 +33,17 @@ export function computeVelocityRisk(txs: Tx[], nowMs: number, windowMs = 6000): 
 /** Maps an assessed risk (0-1) to a reputation score penalty, 2-9 points. */
 export function computeRogueScorePenalty(risk: number): number {
   return Math.max(2, Math.min(9, Math.round(risk * 9)));
+}
+
+/**
+ * Required collateral bond as a fraction of the credit limit, mirroring
+ * ReputationRegistry.bondRatioBps on-chain: it falls as reputation rises,
+ * so trust substitutes for capital. A floor-score agent posts ~60%; a
+ * top-score agent posts ~5%. Returned as a 0-1 fraction for the UI.
+ */
+export function computeBondRatio(score: number): number {
+  const s = Math.min(99, Math.max(40, score));
+  const span = 99 - 40;
+  const ratioBps = 6000 - ((s - 40) * (6000 - 500)) / span;
+  return ratioBps / 10_000;
 }

@@ -28,7 +28,7 @@ const TIERS = [
   },
   {
     name: "Scale",
-    price: "₹0.35",
+    price: "$0.35",
     unit: "per active agent / day",
     tagline: "For teams putting real agents into production.",
     features: [

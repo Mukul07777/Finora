@@ -13,8 +13,8 @@ import {
 const FEATURES = [
   {
     icon: Fingerprint,
-    title: "Agent Identity (DID)",
-    body: "A verifiable, non-transferable link between the agent and the human or organization accountable for it.",
+    title: "Signed Owner→Agent Delegation",
+    body: "The owner signs a scoped, expiring EIP-712 capability; the contract verifies the signature on-chain. The agent's authority is a cryptographic delegation from a named human, not a bare address.",
   },
   {
     icon: Gauge,
@@ -38,8 +38,8 @@ const FEATURES = [
   },
   {
     icon: Radio,
-    title: "Real-time Anomaly Detection",
-    body: "Velocity and pattern monitoring flags overzealous or hijacked behavior before damage compounds.",
+    title: "Circuit Breaker That Acts",
+    body: "Velocity monitoring doesn't just flag — above a risk threshold a monitor trips the on-chain kill switch automatically, with no human in the loop. Guardians can freeze too, but none of them can withdraw.",
   },
   {
     icon: Siren,
@@ -48,8 +48,8 @@ const FEATURES = [
   },
   {
     icon: Repeat,
-    title: "Programmatic Auto-Repayment",
-    body: "When a task's revenue lands, the loan is deducted automatically — no invoices, no chasing, no contract.",
+    title: "Repayment Skimmed at Source",
+    body: "Task revenue routes through the credit contract and outstanding debt is deducted before the agent can touch a cent. Repayment isn't a promise it keeps — it's a deduction it can't route around.",
   },
 ];
 

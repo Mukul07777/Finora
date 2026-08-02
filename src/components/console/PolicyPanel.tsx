@@ -21,7 +21,7 @@ export function PolicyPanel({
 
       <div className="mb-1.5 flex justify-between text-[11px] text-muted">
         <span>Per-transaction cap</span>
-        <span className="font-mono text-foreground">₹{perTxCap.toLocaleString("en-IN")}</span>
+        <span className="font-mono text-foreground">${perTxCap.toLocaleString("en-IN")}</span>
       </div>
       <input
         type="range"
@@ -34,8 +34,8 @@ export function PolicyPanel({
         className="w-full accent-accent"
       />
       <div className="mt-1 flex justify-between text-[10px] text-muted">
-        <span>₹{MIN_PER_TX_CAP.toLocaleString("en-IN")}</span>
-        <span>₹{MAX_PER_TX_CAP.toLocaleString("en-IN")}</span>
+        <span>${MIN_PER_TX_CAP.toLocaleString("en-IN")}</span>
+        <span>${MAX_PER_TX_CAP.toLocaleString("en-IN")}</span>
       </div>
 
       <p className="mt-4 text-[11px] leading-relaxed text-muted">

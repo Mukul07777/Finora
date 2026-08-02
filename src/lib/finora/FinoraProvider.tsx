@@ -100,7 +100,7 @@ export function FinoraProvider({
           id: nextId("notif"),
           tone: "ok",
           title: "Credit approved",
-          body: `₹${terms.limit.toLocaleString("en-IN")} line issued at ${terms.apr}% APR`,
+          body: `$${terms.limit.toLocaleString("en-IN")} line issued at ${terms.apr}% APR`,
           time: timeNow(),
         },
       });
@@ -130,7 +130,7 @@ export function FinoraProvider({
             id: nextId("notif"),
             tone: "warn",
             title: "Payment blocked",
-            body: result.reason ?? `₹${result.amount.toLocaleString("en-IN")} blocked by policy`,
+            body: result.reason ?? `$${result.amount.toLocaleString("en-IN")} blocked by policy`,
             time: timeNow(),
           },
         });
@@ -252,7 +252,7 @@ export function FinoraProvider({
           counterparty: "client.settlement",
           amount: result.revenue,
           status: "repayment",
-          note: `Auto-repaid outstanding balance of ₹${s.balance.toLocaleString("en-IN")}`,
+          note: `Auto-repaid outstanding balance of $${s.balance.toLocaleString("en-IN")}`,
         }),
         notification: {
           id: nextId("notif"),

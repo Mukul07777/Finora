@@ -1,9 +1,26 @@
-# Finora on-chain — AgentWallet
+# Finora on-chain
 
-A session-key smart wallet for an autonomous agent. The agent holds a
-session key (never the owner key) and can only move funds within an
-owner-defined policy — everything is enforced by the EVM, not by the
-agent's own cooperation.
+Three contracts that make credit for an autonomous agent both *possible*
+and *safe*, with every guarantee enforced by the EVM rather than the
+agent's cooperation:
+
+- **`AgentWallet.sol`** — a session-key smart wallet: spend caps, allowlist,
+  kill switch, in-flight revocation, plus EIP-712 delegated spend grants,
+  guardian freeze roles, an automated circuit breaker, and a dead-man switch.
+- **`CreditLine.sol`** — undercollateralized working capital with **repayment
+  skimmed at source**: task revenue routes through the contract and
+  outstanding debt is deducted before the agent can touch a wei. A
+  reputation-scaled, slashable bond posted by the agent's principal is the
+  collateral substitute.
+- **`ReputationRegistry.sol`** — portable, on-chain reputation keyed to the
+  agent's identity, readable by any lender, with principal-inheritance to
+  solve cold-start.
+
+## AgentWallet — session-key smart wallet
+
+The agent holds a session key (never the owner key) and can only move funds
+within an owner-defined policy — everything is enforced by the EVM, not by
+the agent's own cooperation.
 
 Enforced on-chain, independent of the agent:
 
@@ -38,8 +55,10 @@ onchain/
 ```bash
 cd onchain
 npm install
-npm test              # 24 passing — every enforcement rule, proven
-npm run demo:attack   # scripted attack agent vs. the contract, live reverts
+npm test              # 67 passing — every enforcement rule, proven
+npm run demo:attack   # scripted attack agent vs. AgentWallet, live reverts
+npm run demo:redteam  # adversarial demo: enforced repayment, EIP-712 grants,
+                      # guardians, circuit breaker, dead-man switch
 ```
 
 `demo:attack` deploys a fresh instance to an in-memory Hardhat chain and

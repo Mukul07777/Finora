@@ -301,7 +301,7 @@ function HomeScreen({
           disabled={frozen}
           className="w-full rounded-2xl bg-emerald-400 py-3 text-[12px] font-semibold text-black disabled:opacity-40"
         >
-          Request ₹5,000 credit
+          Request $5,000 credit
         </button>
       )}
 
@@ -315,9 +315,9 @@ function HomeScreen({
       {creditActive && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
           <div className="grid grid-cols-3 gap-2 text-center">
-            <MiniStat label="Limit" value={`₹${limit.toLocaleString("en-IN")}`} />
+            <MiniStat label="Limit" value={`$${limit.toLocaleString("en-IN")}`} />
             <MiniStat label="APR" value={`${apr}%`} />
-            <MiniStat label="Owed" value={`₹${balance.toLocaleString("en-IN")}`} />
+            <MiniStat label="Owed" value={`$${balance.toLocaleString("en-IN")}`} />
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-emerald-400" style={{ width: `${used}%` }} />
@@ -381,7 +381,7 @@ function ActivityScreen({ txs }: { txs: Tx[] }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-[11px] text-white">{tx.label}</span>
-                <span className="shrink-0 font-mono text-[11px] text-white">₹{tx.amount.toLocaleString("en-IN")}</span>
+                <span className="shrink-0 font-mono text-[11px] text-white">${tx.amount.toLocaleString("en-IN")}</span>
               </div>
               <div className="truncate text-[9.5px] text-white/40">{tx.note}</div>
             </div>
@@ -447,7 +447,7 @@ function AgentScreen({
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
         <div className="mb-2 flex items-center justify-between text-[10.5px]">
           <span className="uppercase tracking-wide text-white/50">Owner: per-tx cap</span>
-          <span className="font-mono text-white">₹{perTxCap.toLocaleString("en-IN")}</span>
+          <span className="font-mono text-white">${perTxCap.toLocaleString("en-IN")}</span>
         </div>
         <input
           type="range"

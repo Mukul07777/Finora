@@ -14,7 +14,6 @@ const LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
   { href: "/about", label: "About" },
-  { href: "/judges", label: "For Judges" },
 ];
 
 export function Nav() {

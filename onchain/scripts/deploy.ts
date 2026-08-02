@@ -45,7 +45,57 @@ async function main() {
     console.log(`Funded wallet with 1 ETH for local testing.`);
   }
 
-  console.log("\nDone. Save this address for the frontend's NEXT_PUBLIC_AGENT_WALLET_ADDRESS.");
+  console.log("\nAgentWallet ready.");
+
+  // --- Reputation + Credit stack -----------------------------------------
+  console.log("\nDeploying ReputationRegistry + CreditLine...");
+  const RegFactory = await ethers.getContractFactory("ReputationRegistry", deployer);
+  const registry = await RegFactory.deploy();
+  await registry.waitForDeployment();
+  const registryAddress = await registry.getAddress();
+  console.log(`ReputationRegistry deployed at: ${registryAddress}`);
+
+  const principalAddress = process.env.PRINCIPAL_ADDRESS || deployer.address;
+  const lenderAddress = deployer.address; // the deployer funds the pool in this demo
+  const baseLimit = ethers.parseEther("10");
+  const aprBps = 1200;
+
+  const LineFactory = await ethers.getContractFactory("CreditLine", deployer);
+  const creditLine = await LineFactory.deploy(
+    lenderAddress,
+    agentAddress,
+    principalAddress,
+    registryAddress,
+    baseLimit,
+    aprBps
+  );
+  await creditLine.waitForDeployment();
+  const creditLineAddress = await creditLine.getAddress();
+  console.log(`CreditLine deployed at: ${creditLineAddress}`);
+
+  // Let the credit line write reputation (job success / default).
+  const repTx = await registry.connect(deployer).setReporter(creditLineAddress, true);
+  await repTx.wait();
+  console.log("CreditLine authorized as a reputation reporter.");
+
+  if (network.name === "hardhat" || network.name === "localhost") {
+    const fund = await deployer.sendTransaction({ to: creditLineAddress, value: ethers.parseEther("1") });
+    await fund.wait();
+    console.log("Seeded CreditLine with 1 ETH for local testing.");
+  }
+
+  // Settlement escrow — the trustless revenue-capture layer.
+  const EscrowFactory = await ethers.getContractFactory("SettlementEscrow", deployer);
+  const escrow = await EscrowFactory.deploy();
+  await escrow.waitForDeployment();
+  const escrowAddress = await escrow.getAddress();
+  console.log(`SettlementEscrow deployed at: ${escrowAddress}`);
+
+  console.log("\nDone. Frontend env:");
+  console.log(`  NEXT_PUBLIC_AGENT_WALLET_ADDRESS=${address}`);
+  console.log(`  NEXT_PUBLIC_REPUTATION_REGISTRY_ADDRESS=${registryAddress}`);
+  console.log(`  NEXT_PUBLIC_CREDIT_LINE_ADDRESS=${creditLineAddress}`);
+  console.log(`  NEXT_PUBLIC_SETTLEMENT_ESCROW_ADDRESS=${escrowAddress}`);
 }
 
 main().catch((err) => {

@@ -8,8 +8,8 @@ Verifiable identity · real-time reputation · dynamically underwritten credit �
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white)](https://soliditylang.org)
-[![Hardhat](https://img.shields.io/badge/Hardhat-tests%2024%2F24-FFF04D?logo=hardhat&logoColor=black)](onchain)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white)](https://soliditylang.org)
+[![Hardhat](https://img.shields.io/badge/Hardhat-tests%2067%2F67-FFF04D?logo=hardhat&logoColor=black)](onchain)
 [![License](https://img.shields.io/badge/license-MIT-informational)](#license)
 
 Built for **Innova Hack Chapter-1**, Domain 1 — Fintech.
@@ -49,10 +49,17 @@ Finora is the layer underneath both problems: identity and reputation to make cr
 This isn't a slide deck. Two things actually run:
 
 1. **The site** — a full Next.js app: Home, a live interactive console, Security, Pricing, Docs, About.
-2. **The contract** — `onchain/contracts/AgentWallet.sol`, a Solidity session-key wallet with a 24-test suite and a scripted attack-agent demo that runs real attacks against an in-memory Hardhat EVM (real Solidity execution, no deployment or network required) and prints the actual revert reasons.
+2. **The contracts** — five Solidity contracts in `onchain/contracts/` with a **67-test suite** and four scripted demos that run real attacks against an in-memory Hardhat EVM (real Solidity execution, no deployment or network required) and print the actual revert reasons:
+   - `AgentWallet.sol` — session-key wallet: spend caps, allowlist, kill switch, in-flight revocation, **EIP-712 delegated grants, guardian freeze roles, an automated circuit breaker, and a dead-man switch**.
+   - `CreditLine.sol` — undercollateralized credit with **repayment skimmed at source** and a reputation-scaled, slashable bond.
+   - `ReputationRegistry.sol` — portable on-chain reputation with principal-inheritance for cold-start.
+   - `SettlementEscrow.sol` — **trustless revenue capture**: customers pay an escrow bound to the credit line, so the agent has no address to redirect income to. Release only ever routes into the line's skim.
 
 ```bash
-cd onchain && npm install && npm run demo:attack
+cd onchain && npm install && npm test        # 67 passing
+npm run demo:attack     # AgentWallet policy attacks, live reverts
+npm run demo:redteam    # enforced repayment, EIP-712 grants, guardians, dead-man switch
+npm run demo:peer       # agent-to-agent peer-backed credit (cold-start solved)
 ```
 
 ```
@@ -68,13 +75,13 @@ cd onchain && npm install && npm run demo:attack
             → in-flight revocation confirmed: no funds moved
 ```
 
-## For judges — the fastest path through it
+## Try it — the fastest path through it
 
 Everything below is clickable in under two minutes at `/console`:
 
 1. **Request credit.** Watch the underwriting steps run, then note the limit/APR — computed from the agent's score (`computeCreditTerms`), not hardcoded.
 2. **Send a payment, watch it go `pending`.** It's a real two-step lifecycle (propose → settle), mirroring `proposePayment()`/`executePayment()` on-chain — not an instant approve/reject.
-3. **Send another payment, then hit the kill switch while it's still pending.** The exact in-flight transaction gets cancelled — ₹0 moved — the same in-flight revocation proven in the Solidity test suite, reproduced live in the browser.
+3. **Send another payment, then hit the kill switch while it's still pending.** The exact in-flight transaction gets cancelled — $0 moved — the same in-flight revocation proven in the Solidity test suite, reproduced live in the browser.
 4. **Drag the per-transaction cap slider down, then try to pay.** The next payment blocks with the new cap as the stated reason.
 5. **Do the same from the phone below the console** — it's the same agent, same `FinoraProvider` instance. Freeze it from the phone; watch the console above freeze too.
 6. **Click "Simulate rogue spend" a few times quickly.** The assessed risk in the alert changes each time — it's computed from actual transaction velocity, not a fixed number — and the credit terms visibly worsen.
@@ -84,24 +91,25 @@ Everything below is clickable in under two minutes at `/console`:
 
 ```mermaid
 flowchart TD
-    A["Identity Layer<br/>DID issuance · owner binding · non-transferable agent keys"] --> B
-    B["Reputation Engine<br/>task success rate · spend pattern · refund ratio"] --> C
-    C["Credit / Policy Engine<br/>dynamic limit + APR · one policy object for credit AND spend"] --> D
-    D["Wallet Enforcement Layer<br/>allowlist · spend caps · in-flight revocation"] --> E
-    E["Audit & Monitoring<br/>anomaly detection · immutable log · owner alerts"]
+    A["Identity Layer<br/>EIP-712 owner→agent grants · signature-verified delegation"] --> B
+    B["Reputation Engine<br/>portable on-chain score · principal-inheritance · job/default history"] --> C
+    C["Credit Engine<br/>reputation-scaled limit · slashable bond · repayment skimmed at source"] --> D
+    D["Wallet Enforcement Layer<br/>allowlist · spend caps · in-flight revocation · grants"] --> E
+    E["Guardrails & Monitoring<br/>guardians · automated circuit breaker · dead-man switch"]
 ```
 
 The same policy object that decides how much an agent can borrow is the one that enforces how much it can spend — there's no gap between "approved to borrow" and "allowed to spend."
 
 ## Feature highlights
 
-- **Agent identity (DID)** — a verifiable, non-transferable link between an agent and the human or org that authorized it
-- **Reputation engine** — underwriting from task success rate, spend discipline, and refund ratio, with no credit history required
-- **Dynamic credit line** — limit and APR recalculated in real time, not fixed at onboarding
+- **Signed owner→agent delegation** — the owner signs a scoped, expiring EIP-712 grant; `AgentWallet.sol` verifies the signature on-chain, so the agent's authority is a verifiable cryptographic delegation from a named human, not a bare address
+- **Portable on-chain reputation** — `ReputationRegistry.sol` keys score to agent identity, readable by any lender, with principal-inheritance to solve cold-start; underwriting needs no credit history
+- **Dynamic credit line** — limit is `baseLimit × score`, recomputed on every read, not fixed at onboarding
+- **Guardians, circuit breaker & dead-man switch** — guardians and an automated monitor can freeze the agent (never withdraw); silent owners auto-expire the agent's authority
 - **Wallet-layer enforcement** — spend caps and counterparty allowlists enforced independent of the agent's own logic
 - **Live owner policy controls** — the per-transaction cap is adjustable in real time from either surface (console or phone), enforced on the agent's very next payment attempt — the same rule as `perTxLimit` in `AgentWallet.sol`, not fixed at deployment
 - **Instant kill switch** — one owner action freezes the agent, including in-flight, multi-step transactions
-- **Programmatic auto-repayment** — loan balance is deducted automatically when a task's revenue lands
+- **Repayment skimmed at source** — task revenue routes through `CreditLine.sol` and outstanding debt is deducted before the agent can withdraw; default slashes a reputation-scaled bond
 - **Agent Autopilot (optional)** — a real LLM (Groq) can drive the agent's decisions instead of a human clicking buttons, through the same policy path — see [Real LLM agent](#real-llm-agent-optional) below
 
 ## Tech stack
@@ -112,8 +120,8 @@ The same policy object that decides how much an agent can borrow is the one that
 | Shared state | `FinoraProvider` — a `useReducer` store with a pure reducer + async action coordinator, single source of truth for the console and phone demos |
 | Backend seam | `FinoraAdapter` interface, currently backed by `simulationAdapter` (timers + randomness). Swappable for a future on-chain adapter without touching the reducer or any component |
 | Optional LLM agent | Groq (`llama-3.1-8b-instant` by default), called server-side only from `app/api/agent/decide` |
-| Enforcement contract | Solidity 0.8.24, Hardhat, ethers v6, TypeChain |
-| Testing | Mocha/Chai via Hardhat (24 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
+| Enforcement contract | Solidity 0.8.26, Hardhat, ethers v6, TypeChain — AgentWallet, CreditLine, ReputationRegistry |
+| Testing | Mocha/Chai via Hardhat (67 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
 
 ## Project structure
 
@@ -129,7 +137,7 @@ Finora/
 │     └─ ui/                shared layout primitives
 ├─ onchain/
 │  ├─ contracts/AgentWallet.sol
-│  ├─ test/AgentWallet.test.ts       24 tests: ownership transfer, limits, allowlist, kill switch, in-flight revocation, reentrancy guard
+│  ├─ test/AgentWallet.test.ts       58 tests across AgentWallet, CreditLine & ReputationRegistry: ownership, limits, allowlist, kill switch, in-flight revocation, reentrancy, EIP-712 grants, guardians, dead-man switch, enforced repayment, slashable bond
 │  └─ scripts/
 │     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit
 │     └─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
@@ -160,7 +168,7 @@ npm run test:unit      # Vitest — pure reducer unit tests
 ```bash
 cd onchain
 npm install
-npm test              # 24 passing
+npm test              # 67 passing
 npm run demo:attack   # scripted attack agent, live EVM reverts
 ```
 
@@ -197,13 +205,15 @@ Every claim above, checked against what actually runs:
 
 | Claim | Status | Detail |
 |---|---|---|
-| On-chain enforcement logic (limits, allowlist, pause, in-flight revocation) | **Real** | `AgentWallet.sol`, 24/24 tests passing, run it yourself in `/onchain` |
-| Attack demo reverts | **Real** | Real Solidity execution on an in-memory Hardhat EVM — not a deployed testnet contract |
+| On-chain enforcement logic (limits, allowlist, pause, in-flight revocation) | **Real** | `AgentWallet.sol`, part of 67/67 tests passing, run it yourself in `/onchain` |
+| EIP-712 delegated grants, guardians, circuit breaker, dead-man switch | **Real** | `AgentWallet.sol` — signature recovery, freeze-only roles, and auto-expiry, all test-covered |
+| Enforced repayment (skim-at-source) + slashable bond + reputation | **Real** | `CreditLine.sol` + `ReputationRegistry.sol` — revenue is skimmed before the agent can withdraw; default slashes the bond and writes reputation on-chain |
+| Attack + red-team demo reverts | **Real** | Real Solidity execution on an in-memory Hardhat EVM — not a deployed testnet contract |
 | Console/phone credit, spend, kill-switch flows | **Simulated** | In-browser React state (`FinoraProvider`), no blockchain call. Labeled "Simulation Mode" in the UI |
 | Payment lifecycle in the console | **Simulated, but modeled on the real thing** | Payments genuinely go `pending` → settled, mirroring `proposePayment()`/`executePayment()`. Freezing mid-payment really cancels that exact pending transaction — no funds move — the same in-flight revocation proven on-chain, reproduced in the simulated state machine |
 | "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |
 | REST API (`/docs`) | **Not live** | Describes the planned API shape; `api.finora.dev` does not resolve |
-| Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable during judging — see `onchain/README.md` for how to deploy it |
+| Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable — see `onchain/README.md` for how to deploy it |
 | Starting reputation score | **Seeded** | Every session starts at score 82 — a bootstrap value, since there's no real history yet |
 | Credit limit / APR | **Computed** | `computeCreditTerms(score)` — a real formula, recalculated live whenever score changes (job completions, rogue attempts), not fixed once at approval |
 | The "agent" | **Scripted by default; real LLM in opt-in Autopilot** | `/console` has an "Agent Autopilot" toggle — a Groq model genuinely decides the next action (request credit / spend / repay / wait) every few seconds via `/api/agent/decide`. Its decisions go through the exact same policy checks as a human clicking the buttons. Off by default; needs `GROQ_API_KEY` |

@@ -58,7 +58,7 @@ export function TxFeed({ txs }: { txs: Tx[] }) {
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm text-foreground">{tx.label}</span>
                     <span className="shrink-0 font-mono text-sm text-foreground">
-                      ₹{tx.amount.toLocaleString("en-IN")}
+                      ${tx.amount.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className="mt-0.5 flex items-center justify-between gap-2">

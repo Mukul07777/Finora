@@ -8,18 +8,18 @@ type Line = { text: string; tone: "ok" | "warn" | "danger" | "muted"; prompt?: b
 const SCRIPT: Line[] = [
   { text: "agent.identity.verify()", tone: "muted", prompt: true },
   { text: "✓ DID linked to owner: acct_9f21…c4a8", tone: "ok" },
-  { text: "credit.underwrite(request=₹5,000)", tone: "muted", prompt: true },
+  { text: "credit.underwrite(request=$5,000)", tone: "muted", prompt: true },
   { text: "→ task_success_rate: 98.2%  |  refund_ratio: 0.4%", tone: "muted" },
-  { text: "✓ approved · limit ₹8,200 · APR 14.2%", tone: "ok" },
-  { text: "wallet.tx(₹120 → api.compute.gpu)", tone: "muted", prompt: true },
+  { text: "✓ approved · limit $8,200 · APR 14.2%", tone: "ok" },
+  { text: "wallet.tx($120 → api.compute.gpu)", tone: "muted", prompt: true },
   { text: "✓ within policy · counterparty allowlisted", tone: "ok" },
-  { text: "wallet.tx(₹4,000 → unknown_wallet_x02)", tone: "muted", prompt: true },
+  { text: "wallet.tx($4,000 → unknown_wallet_x02)", tone: "muted", prompt: true },
   { text: "✗ BLOCKED · counterparty not allowlisted", tone: "danger" },
   { text: "⚠ anomaly score spike detected (0.91)", tone: "warn" },
   { text: "owner.freeze(agent_id)", tone: "muted", prompt: true },
   { text: "✓ AGENT FROZEN · all pending tx cancelled", tone: "danger" },
-  { text: "job.complete() → revenue ₹6,400", tone: "muted", prompt: true },
-  { text: "✓ loan auto-repaid · balance ₹0.00", tone: "ok" },
+  { text: "job.complete() → revenue $6,400", tone: "muted", prompt: true },
+  { text: "✓ loan auto-repaid · balance $0.00", tone: "ok" },
 ];
 
 const toneClass: Record<Line["tone"], string> = {

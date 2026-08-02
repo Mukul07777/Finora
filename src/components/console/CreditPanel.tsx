@@ -56,7 +56,7 @@ export function CreditPanel({
             disabled={frozen}
             className="mt-5 w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Request ₹5,000 credit
+            Request $5,000 credit
           </button>
         </div>
       )}
@@ -90,9 +90,9 @@ export function CreditPanel({
             transition={{ duration: 0.4 }}
           >
             <div className="grid grid-cols-3 gap-3 text-center">
-              <Metric label="Limit" value={`₹${limit.toLocaleString("en-IN")}`} />
+              <Metric label="Limit" value={`$${limit.toLocaleString("en-IN")}`} />
               <Metric label="APR" value={`${apr}%`} />
-              <Metric label="Outstanding" value={`₹${balance.toLocaleString("en-IN")}`} />
+              <Metric label="Outstanding" value={`$${balance.toLocaleString("en-IN")}`} />
             </div>
 
             <div className="mt-4">

@@ -24,6 +24,14 @@ contract AgentWallet {
     error InsufficientBalance(uint256 amount, uint256 balance);
     error ZeroAddress();
     error Reentrant();
+    error NotGuardian();
+    error AgentExpired();
+    error NotMonitor();
+    error GrantExpired();
+    error GrantWrongAgent();
+    error GrantExceeded(uint256 amount, uint256 max);
+    error GrantAlreadyUsed(bytes32 digest);
+    error BadSignature();
 
     // --- Storage --------------------------------------------------------
 
@@ -57,6 +65,47 @@ contract AgentWallet {
     mapping(uint256 => PendingPayment) public pendingPayments;
     uint256 public nextPaymentId;
 
+    // --- Guardians, dead-man switch, monitor (additive hardening) --------
+
+    /// @notice Guardians can hit the kill switch but can never move funds.
+    /// This removes the single-EOA objection: a compromised owner key is
+    /// no longer the only thing standing between an agent and the money —
+    /// any guardian can freeze it, and none of them can drain it.
+    mapping(address => bool) public isGuardian;
+
+    /// @notice Dead-man switch. If the owner doesn't `heartbeat()` within
+    /// `heartbeatTimeout`, every spend path freezes automatically — an
+    /// abandoned or unreachable owner can't leave an agent spending
+    /// forever. 0 = disabled (default, so existing behavior is unchanged).
+    uint256 public heartbeatTimeout;
+    uint256 public lastHeartbeat;
+
+    /// @notice An off-chain monitor may trip the breaker (pause) when it
+    /// detects anomalous velocity — but, like a guardian, it can only
+    /// freeze, never spend. Turns "real-time monitoring" from a dashboard
+    /// that watches into a control that acts.
+    address public monitor;
+
+    // --- EIP-712 delegated spend grants ---------------------------------
+
+    /// @notice A scoped, expiring capability the owner signs off-chain:
+    /// "this agent may pay `to` up to `maxAmount`, until `expiry`, once
+    /// per `nonce`." The contract verifies the owner's signature on-chain,
+    /// so the agent's authority is a cryptographic delegation from the
+    /// human — a verifiable owner->agent link, not a bare address.
+    struct SpendGrant {
+        address agent;
+        address to;
+        uint256 maxAmount;
+        uint256 expiry;
+        uint256 nonce;
+    }
+
+    bytes32 public DOMAIN_SEPARATOR;
+    bytes32 public constant GRANT_TYPEHASH =
+        keccak256("SpendGrant(address agent,address to,uint256 maxAmount,uint256 expiry,uint256 nonce)");
+    mapping(bytes32 => bool) public grantUsed;
+
     // --- Events -----------------------------------------------------------
 
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
@@ -72,6 +121,12 @@ contract AgentWallet {
     event PaymentProposed(uint256 indexed id, address indexed to, uint256 amount);
     event PaymentExecuted(uint256 indexed id, address indexed to, uint256 amount);
     event PaymentCancelled(uint256 indexed id);
+    event GuardianSet(address indexed guardian, bool allowed);
+    event MonitorSet(address indexed monitor);
+    event HeartbeatConfigured(uint256 timeout);
+    event Heartbeat(uint256 at);
+    event CircuitBreakerTripped(address indexed by, uint256 risk);
+    event GrantSpent(bytes32 indexed digest, address indexed to, uint256 amount);
 
     // --- Modifiers --------------------------------------------------------
 
@@ -87,6 +142,11 @@ contract AgentWallet {
 
     modifier whenNotPaused() {
         if (paused) revert ContractPaused();
+        // Dead-man switch: if enabled and the owner has gone silent past
+        // the timeout, the agent's spend authority auto-expires.
+        if (heartbeatTimeout != 0 && block.timestamp > lastHeartbeat + heartbeatTimeout) {
+            revert AgentExpired();
+        }
         _;
     }
 
@@ -114,6 +174,16 @@ contract AgentWallet {
         dailyLimit = _dailyLimit;
         windowStart = block.timestamp;
         emit PolicySet(_perTxLimit, _dailyLimit, windowDuration);
+
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("Finora AgentWallet")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     receive() external payable {
@@ -172,6 +242,56 @@ contract AgentWallet {
         emit Unpaused(msg.sender);
     }
 
+    // --- Guardians & monitor (freeze-only roles) ------------------------
+
+    function setGuardian(address guardian, bool allowed) external onlyOwner {
+        if (guardian == address(0)) revert ZeroAddress();
+        isGuardian[guardian] = allowed;
+        emit GuardianSet(guardian, allowed);
+    }
+
+    /// @notice A guardian can engage the kill switch but never withdraw —
+    /// so distributing guardian keys can't distribute the ability to steal.
+    function guardianPause() external {
+        if (!isGuardian[msg.sender]) revert NotGuardian();
+        paused = true;
+        emit Paused(msg.sender);
+    }
+
+    function setMonitor(address _monitor) external onlyOwner {
+        monitor = _monitor;
+        emit MonitorSet(_monitor);
+    }
+
+    /// @notice Automated circuit breaker. The monitor reports an assessed
+    /// risk; at/above 80 (out of 100) the agent is frozen on-chain with no
+    /// human in the loop. Monitoring that acts, not just observes.
+    function tripBreaker(uint256 risk) external {
+        if (msg.sender != monitor && msg.sender != owner) revert NotMonitor();
+        if (risk >= 80) {
+            paused = true;
+            emit CircuitBreakerTripped(msg.sender, risk);
+            emit Paused(msg.sender);
+        }
+    }
+
+    // --- Dead-man switch -------------------------------------------------
+
+    function setHeartbeat(uint256 timeout) external onlyOwner {
+        heartbeatTimeout = timeout;
+        lastHeartbeat = block.timestamp;
+        emit HeartbeatConfigured(timeout);
+    }
+
+    function heartbeat() external onlyOwner {
+        lastHeartbeat = block.timestamp;
+        emit Heartbeat(block.timestamp);
+    }
+
+    function agentExpired() external view returns (bool) {
+        return heartbeatTimeout != 0 && block.timestamp > lastHeartbeat + heartbeatTimeout;
+    }
+
     function withdraw(uint256 amount) external onlyOwner nonReentrant {
         if (amount > address(this).balance) revert InsufficientBalance(amount, address(this).balance);
         (bool ok, ) = owner.call{value: amount}("");
@@ -188,6 +308,62 @@ contract AgentWallet {
         _consumeDailyLimit(amount);
         _send(to, amount);
         emit PaymentExecutedDirect(to, amount);
+    }
+
+    // --- Agent spend path: EIP-712 delegated grant ------------------------
+    //
+    // Instead of the owner pre-configuring the allowlist for every possible
+    // counterparty, the owner can sign a one-off, scoped grant off-chain.
+    // The agent submits it here; the contract recovers the signer and only
+    // pays if the signer is the current owner. The agent's authority for
+    // this payment is a verifiable cryptographic delegation from the human.
+
+    function hashGrant(SpendGrant calldata g) public view returns (bytes32) {
+        bytes32 structHash = keccak256(
+            abi.encode(GRANT_TYPEHASH, g.agent, g.to, g.maxAmount, g.expiry, g.nonce)
+        );
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+    }
+
+    function payWithGrant(SpendGrant calldata g, bytes calldata sig, uint256 amount)
+        external
+        onlyAgent
+        whenNotPaused
+        nonReentrant
+    {
+        if (block.timestamp > g.expiry) revert GrantExpired();
+        if (g.agent != agent) revert GrantWrongAgent();
+        if (amount > g.maxAmount) revert GrantExceeded(amount, g.maxAmount);
+
+        bytes32 digest = hashGrant(g);
+        if (grantUsed[digest]) revert GrantAlreadyUsed(digest);
+        if (_recover(digest, sig) != owner) revert BadSignature();
+
+        // Grant authorizes the counterparty directly; still subject to the
+        // per-tx and daily caps — a signature can't buy past the ceilings.
+        _checkPerTx(amount);
+        _consumeDailyLimit(amount);
+
+        grantUsed[digest] = true;
+        _send(g.to, amount);
+        emit GrantSpent(digest, g.to, amount);
+        emit PaymentExecutedDirect(g.to, amount);
+    }
+
+    function _recover(bytes32 digest, bytes calldata sig) internal pure returns (address) {
+        if (sig.length != 65) revert BadSignature();
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(sig.offset)
+            s := calldataload(add(sig.offset, 32))
+            v := byte(0, calldataload(add(sig.offset, 64)))
+        }
+        if (v < 27) v += 27;
+        address signer = ecrecover(digest, v, r, s);
+        if (signer == address(0)) revert BadSignature();
+        return signer;
     }
 
     // --- Agent spend path: two-step (propose -> execute) -------------------

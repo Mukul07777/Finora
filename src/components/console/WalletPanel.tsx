@@ -36,7 +36,7 @@ export function WalletPanel({
         <div className="mb-1.5 flex justify-between text-[11px] text-muted">
           <span>Spend this cycle</span>
           <span>
-            ₹{spendUsed.toLocaleString("en-IN")} / ₹{spendLimit.toLocaleString("en-IN")}
+            ${spendUsed.toLocaleString("en-IN")} / ${spendLimit.toLocaleString("en-IN")}
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">

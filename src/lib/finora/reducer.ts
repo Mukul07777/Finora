@@ -1,4 +1,5 @@
 import { computeCreditTerms } from "./scoring";
+import { SAMPLE_UNDERWRITING } from "./sampleTelemetry";
 import { DEFAULT_PER_TX_CAP, FinoraState, MAX_PER_TX_CAP, MIN_PER_TX_CAP, Notification, Tx } from "./types";
 
 export type FinoraAction =
@@ -15,7 +16,10 @@ export type FinoraAction =
 
 export const initialFinoraState: FinoraState = {
   frozen: false,
-  score: 82,
+  // Derived from the agent's execution telemetry (see sampleTelemetry),
+  // not a seeded constant — underwriting is the output of a scorer over
+  // real task/spend/violation history.
+  score: SAMPLE_UNDERWRITING.score,
   creditStatus: "idle",
   underwritingStep: 0,
   limit: 0,

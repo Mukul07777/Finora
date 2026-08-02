@@ -33,7 +33,7 @@ export function Metrics() {
       id="metrics"
       eyebrow="Built against the hard questions"
       title="Why this holds up outside a demo"
-      description="Finora is designed around the exact tension judges (and real lenders) will press on: how do you trust an entity that can't be sued?"
+      description="Finora is designed around the exact tension real lenders press on: how do you trust an entity that can't be sued?"
     >
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {METRICS.map((m) => (

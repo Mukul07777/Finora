@@ -30,7 +30,7 @@ export function evaluatePayment(state: FinoraState): PaymentAttempt {
       merchant,
       amount,
       allowed: false,
-      reason: `Blocked — exceeds owner-set per-transaction cap (₹${state.perTxCap.toLocaleString("en-IN")})`,
+      reason: `Blocked — exceeds owner-set per-transaction cap ($${state.perTxCap.toLocaleString("en-IN")})`,
     };
   }
   if (amount > remaining) {
