@@ -61,7 +61,7 @@ export function Console() {
         <div className="space-y-6 lg:col-span-1">
           <ColumnLabel n="1" title="The agent" hint="Who it is, and the emergency brake." />
           <MotionCard delay={0.02}>
-            <AgentPassport frozen={state.frozen} score={state.score} tier={tier} />
+            <AgentPassport frozen={state.frozen} score={state.score} tier={tier} liveSeeded={state.liveSeeded} />
           </MotionCard>
           <MotionCard delay={0.08}>
             <AgentAvatar />

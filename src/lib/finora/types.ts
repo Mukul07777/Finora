@@ -36,6 +36,11 @@ export interface FinoraState {
   perTxCap: number;
   txs: Tx[];
   notifications: Notification[];
+  /** True once the starting score below has been overwritten by a real
+   * on-chain read from ReputationRegistry.scoreOf() on Sepolia — see
+   * FinoraProvider's mount effect. False means it's still the static
+   * SAMPLE_UNDERWRITING seed. */
+  liveSeeded: boolean;
 }
 
 export const ALLOWLIST = ["api.compute.gpu", "vendor.data-feed", "cloud.storage.us"] as const;

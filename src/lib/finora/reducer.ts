@@ -12,7 +12,8 @@ export type FinoraAction =
   | { type: "ROGUE_BLOCKED"; tx: Tx; notification: Notification; scoreDelta: number }
   | { type: "FREEZE_TOGGLED"; notification: Notification }
   | { type: "JOB_COMPLETED"; tx: Tx; notification: Notification }
-  | { type: "POLICY_UPDATED"; perTxCap: number };
+  | { type: "POLICY_UPDATED"; perTxCap: number }
+  | { type: "LIVE_STATE_SEEDED"; score: number };
 
 export const initialFinoraState: FinoraState = {
   frozen: false,
@@ -28,6 +29,7 @@ export const initialFinoraState: FinoraState = {
   perTxCap: DEFAULT_PER_TX_CAP,
   txs: [],
   notifications: [],
+  liveSeeded: false,
 };
 
 function pushTx(txs: Tx[], tx: Tx): Tx[] {
@@ -77,6 +79,15 @@ export function finoraReducer(state: FinoraState, action: FinoraAction): FinoraS
         apr: terms.apr,
         notifications: pushNotification(state.notifications, action.notification),
       };
+    }
+
+    // Overwrites the static SAMPLE_UNDERWRITING seed with a real read from
+    // ReputationRegistry.scoreOf() on Sepolia (see FinoraProvider's mount
+    // effect). Credit terms are recomputed the same way any score change
+    // recomputes them — no separate code path for "live" vs "seeded".
+    case "LIVE_STATE_SEEDED": {
+      const terms = withRecomputedTerms(state, action.score);
+      return { ...state, score: action.score, liveSeeded: true, ...terms };
     }
 
     case "PAYMENT_BLOCKED":

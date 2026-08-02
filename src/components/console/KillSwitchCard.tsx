@@ -1,6 +1,12 @@
 "use client";
 
-import { Power } from "lucide-react";
+import { Power, ExternalLink } from "lucide-react";
+
+// Real transaction from `npm run demo:live` (onchain/scripts/proveSepolia.ts)
+// — the owner's actual pause() call against the deployed Sepolia AgentWallet.
+// See src/components/LiveTransactionProof.tsx for the full proof set.
+const REAL_PAUSE_TX =
+  "https://sepolia.etherscan.io/tx/0xda934331e4a6ed3181deb9198028897d913e48a2c1eab3b131a6cfd28cea0a4f";
 
 export function KillSwitchCard({
   frozen,
@@ -55,6 +61,18 @@ export function KillSwitchCard({
         <span className="mt-4 text-xs font-medium text-foreground">
           {frozen ? "Click to reinstate agent" : "Click to freeze agent"}
         </span>
+
+        {frozen && (
+          <a
+            href={REAL_PAUSE_TX}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-3 py-1.5 text-[10.5px] text-accent transition hover:bg-accent/10"
+          >
+            This exact action already happened for real on Sepolia
+            <ExternalLink size={10} />
+          </a>
+        )}
       </div>
     </div>
   );

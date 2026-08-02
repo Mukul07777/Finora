@@ -7,10 +7,12 @@ export function AgentPassport({
   frozen,
   score,
   tier,
+  liveSeeded,
 }: {
   frozen: boolean;
   score: number;
   tier: string;
+  liveSeeded?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-6">
@@ -60,6 +62,14 @@ export function AgentPassport({
           <Row label="Refund ratio" value="0.4%" />
         </div>
       </div>
+
+      {liveSeeded && (
+        <div className="mt-4 flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-[10.5px] text-accent">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+          Score seeded from <span className="font-mono">ReputationRegistry.scoreOf()</span> — a real read
+          against the deployed Sepolia contract, not a sample constant.
+        </div>
+      )}
     </div>
   );
 }

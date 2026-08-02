@@ -82,6 +82,30 @@ export function FinoraProvider({
     return () => controller.abort();
   }, [controller]);
 
+  // On mount, try to overwrite the static starting score with a real read
+  // from ReputationRegistry.scoreOf() on Sepolia (via /api/v1/onchain/status
+  // — a plain eth_call, no wallet). If it's bootstrapped, the session starts
+  // from what the deployed contract actually holds right now instead of a
+  // sample constant. Silently no-ops on any failure — this is a nice-to-have
+  // enhancement, never a blocker for the simulation working.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/onchain/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.ok && data?.reputation?.bootstrapped) {
+          dispatch({ type: "LIVE_STATE_SEEDED", score: data.reputation.agentScoreDisplay });
+        }
+      })
+      .catch(() => {
+        /* stay on the sample seed */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const requestCredit = useCallback(async () => {
     if (stateRef.current.creditStatus !== "idle") return;
     dispatch({ type: "CREDIT_REQUEST_STARTED" });

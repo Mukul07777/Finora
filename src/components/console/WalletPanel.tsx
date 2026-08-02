@@ -1,7 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldCheck, Zap, Skull } from "lucide-react";
+import { ShieldCheck, Zap, Skull, ExternalLink } from "lucide-react";
+
+// Real transactions from `npm run demo:live` (onchain/scripts/proveSepolia.ts)
+// — the actual policy reverts these buttons simulate, proven against the
+// deployed Sepolia AgentWallet. See LiveTransactionProof.tsx on /security.
+const REAL_BLOCKED_TX =
+  "https://sepolia.etherscan.io/tx/0x8afcfbe9d0fc69c5de970c8f0e34a557f42b3fdef180f80fd8b593d128786bc2";
 
 export function WalletPanel({
   spendUsed,
@@ -87,6 +93,16 @@ export function WalletPanel({
           Approve a credit line first to activate the wallet.
         </p>
       )}
+
+      <a
+        href={REAL_BLOCKED_TX}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-4 flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2/40 px-3 py-2 text-[10.5px] text-muted transition hover:border-accent/30 hover:text-accent"
+      >
+        This policy revert already happened for real on Sepolia
+        <ExternalLink size={10} />
+      </a>
     </div>
   );
 }
