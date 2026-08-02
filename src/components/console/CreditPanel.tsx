@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 import { CreditStatus } from "./types";
+import { AnimatedNumber } from "./motion";
 
 const STEP_LABELS = [
   "Verifying agent identity & owner link",
@@ -90,9 +91,9 @@ export function CreditPanel({
             transition={{ duration: 0.4 }}
           >
             <div className="grid grid-cols-3 gap-3 text-center">
-              <Metric label="Limit" value={`$${limit.toLocaleString("en-IN")}`} />
-              <Metric label="APR" value={`${apr}%`} />
-              <Metric label="Outstanding" value={`$${balance.toLocaleString("en-IN")}`} />
+              <Metric label="Limit" value={limit} prefix="$" />
+              <Metric label="APR" value={apr} suffix="%" decimals={1} />
+              <Metric label="Outstanding" value={balance} prefix="$" />
             </div>
 
             <div className="mt-4">
@@ -124,10 +125,28 @@ export function CreditPanel({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
+}: {
+  label: string;
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+}) {
   return (
-    <div className="rounded-lg bg-surface-2 py-3">
-      <div className="font-mono text-sm font-semibold text-foreground">{value}</div>
+    <div className="rounded-lg bg-surface-2 py-3 transition-colors hover:bg-surface-2/70">
+      <AnimatedNumber
+        value={value}
+        prefix={prefix}
+        suffix={suffix}
+        decimals={decimals}
+        className="font-mono text-sm font-semibold text-foreground"
+      />
       <div className="mt-1 text-[10px] uppercase tracking-widest text-muted">{label}</div>
     </div>
   );

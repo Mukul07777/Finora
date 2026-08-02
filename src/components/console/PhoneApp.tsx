@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ScoreGauge } from "./ScoreGauge";
+import { AnimatedNumber } from "./motion";
 import type { PhoneNotif, Tx } from "./types";
 import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
 import { MAX_PER_TX_CAP, MIN_PER_TX_CAP, type CreditStatus } from "@/lib/finora/types";
@@ -115,9 +116,31 @@ export function PhoneApp() {
   ];
 
   return (
-    <div className="mx-auto w-[270px] select-none">
-      <div className="relative rounded-[2.6rem] border-[6px] border-black bg-black p-1.5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.55)]">
+    <div className="relative mx-auto w-[270px] select-none">
+      {/* ambient glow behind the device, tinted by live state */}
+      <div
+        className="pointer-events-none absolute -inset-10 -z-10 rounded-full blur-3xl transition-colors duration-700"
+        style={{
+          background: frozen
+            ? "radial-gradient(circle, rgba(255,92,108,0.22), transparent 70%)"
+            : "radial-gradient(circle, rgba(125,255,179,0.18), transparent 70%)",
+        }}
+      />
+      <motion.div
+        className="relative rounded-[2.6rem] border-[6px] border-black bg-black p-1.5 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.6)]"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      >
         <div className="relative flex h-[560px] w-full flex-col overflow-hidden rounded-[2.1rem] bg-[#0a0d16]">
+          {/* wallpaper: soft gradient wash + faint grid */}
+          <div
+            className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-700"
+            style={{
+              background: frozen
+                ? "radial-gradient(120% 60% at 50% -10%, rgba(255,92,108,0.16), transparent 60%)"
+                : "radial-gradient(120% 60% at 50% -10%, rgba(125,255,179,0.14), transparent 60%), radial-gradient(100% 50% at 90% 100%, rgba(110,168,255,0.12), transparent 60%)",
+            }}
+          />
           <div className="absolute left-1/2 top-2 z-30 h-6 w-24 -translate-x-1/2 rounded-full bg-black" />
 
           <div className="relative z-10 flex items-center justify-between px-5 pt-3 text-[10px] font-medium text-white/80">
@@ -226,7 +249,7 @@ export function PhoneApp() {
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
       <p className="mt-4 text-center text-[11px] text-muted">
         A working phone app — tap through it. Its own state, its own kill switch.
       </p>
@@ -312,15 +335,49 @@ function HomeScreen({
         </div>
       )}
 
+      {creditStatus === "idle" && !underwriting && (
+        <div className="space-y-2.5 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-white">Guardrails armed</span>
+            <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wide text-emerald-400">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-emerald-400" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              on-chain
+            </span>
+          </div>
+          <StatusRow icon={<Fingerprint size={12} />} label="Identity verified" />
+          <StatusRow icon={<ShieldCheck size={12} />} label="Policy enforced at wallet layer" />
+          <StatusRow icon={<Power size={12} />} label="Kill switch ready" />
+          {/* faint animated heartbeat */}
+          <div className="mt-1 flex h-6 items-end gap-0.5">
+            {Array.from({ length: 22 }).map((_, i) => (
+              <motion.span
+                key={i}
+                className="flex-1 rounded-sm bg-emerald-400/40"
+                animate={{ height: [4, 6 + ((i * 7) % 16), 4] }}
+                transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.06, ease: "easeInOut" }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {creditActive && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
           <div className="grid grid-cols-3 gap-2 text-center">
-            <MiniStat label="Limit" value={`$${limit.toLocaleString("en-IN")}`} />
-            <MiniStat label="APR" value={`${apr}%`} />
-            <MiniStat label="Owed" value={`$${balance.toLocaleString("en-IN")}`} />
+            <MiniStat label="Limit" value={limit} prefix="$" />
+            <MiniStat label="APR" value={apr} suffix="%" decimals={1} />
+            <MiniStat label="Owed" value={balance} prefix="$" />
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-emerald-400" style={{ width: `${used}%` }} />
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-sky-400"
+              initial={{ width: 0 }}
+              animate={{ width: `${used}%` }}
+              transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            />
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -355,11 +412,40 @@ function HomeScreen({
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({
+  label,
+  value,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
+}: {
+  label: string;
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+}) {
   return (
     <div>
-      <div className="font-mono text-[11px] font-semibold text-white">{value}</div>
+      <AnimatedNumber
+        value={value}
+        prefix={prefix}
+        suffix={suffix}
+        decimals={decimals}
+        className="font-mono text-[11px] font-semibold text-white"
+      />
       <div className="text-[8.5px] uppercase tracking-wide text-white/40">{label}</div>
+    </div>
+  );
+}
+
+function StatusRow({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[10.5px] text-white/70">
+      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-400/10 text-emerald-400">
+        {icon}
+      </span>
+      {label}
     </div>
   );
 }

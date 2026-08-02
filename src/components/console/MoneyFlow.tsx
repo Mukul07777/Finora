@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, TrendingUp, Wallet, Landmark, Store, Coins, ShieldCheck } from "lucide-react";
 import { useFinoraState } from "@/lib/finora/FinoraProvider";
 import { computeBondRatio } from "@/lib/finora/scoring";
+import { AnimatedNumber, AnimatedBar } from "./motion";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -276,7 +277,7 @@ function WhyBorrow({
   approved: boolean;
 }) {
   const max = Math.max(revenue, 1);
-  const pct = (v: number) => `${(v / max) * 100}%`;
+  const numPct = (v: number) => (v / max) * 100;
   const worthIt = net > 0;
 
   return (
@@ -286,18 +287,20 @@ function WhyBorrow({
       </div>
 
       <div className="space-y-3">
-        <BarLine label="Task pays" value={money(revenue)} width={pct(revenue)} className="bg-accent" />
+        <BarLine label="Task pays" value={money(revenue)} pct={numPct(revenue)} className="bg-accent" delay={0.05} />
         <BarLine
           label="Drawdown to complete it"
           value={money(cost)}
-          width={pct(cost)}
+          pct={numPct(cost)}
           className="bg-accent-2"
+          delay={0.12}
         />
         <BarLine
           label={`Interest @ ${apr || 0}% APR · 7d`}
           value={money(interest)}
-          width={pct(interest)}
+          pct={numPct(interest)}
           className="bg-violet"
+          delay={0.19}
         />
       </div>
 
@@ -310,12 +313,11 @@ function WhyBorrow({
           <span className="text-[11px] font-medium text-foreground">
             {worthIt ? "Net gain from borrowing" : "Not worth it at these terms"}
           </span>
-          <span
+          <AnimatedNumber
+            value={net}
+            prefix={net >= 0 ? "+$" : "$"}
             className={`font-mono text-sm font-semibold ${worthIt ? "text-accent" : "text-warning"}`}
-          >
-            {net >= 0 ? "+" : ""}
-            {money(net)}
-          </span>
+          />
         </div>
         <p className="mt-1 text-[10px] leading-relaxed text-muted">
           {approved
@@ -330,13 +332,15 @@ function WhyBorrow({
 function BarLine({
   label,
   value,
-  width,
+  pct,
   className,
+  delay = 0,
 }: {
   label: string;
   value: string;
-  width: string;
+  pct: number;
   className: string;
+  delay?: number;
 }) {
   return (
     <div>
@@ -344,11 +348,8 @@ function BarLine({
         <span className="text-muted">{label}</span>
         <span className="font-mono text-foreground">{value}</span>
       </div>
-      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface">
-        <div
-          className={`h-full rounded-full ${className} transition-all duration-700 ease-out`}
-          style={{ width }}
-        />
+      <div className="mt-1">
+        <AnimatedBar pct={pct} className={className} track="bg-surface" height="h-2" delay={delay} />
       </div>
     </div>
   );

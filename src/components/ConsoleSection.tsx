@@ -17,9 +17,9 @@ export function ConsoleSection() {
     <FinoraProvider>
       <Section
         id="console"
-        eyebrow="Try it yourself"
-        title="A live, clickable console — not a mockup"
-        description="Request credit, spend against it, try to break the rules, and pull the kill switch. Every panel below reacts in real time."
+        eyebrow="The problem, made concrete"
+        title="An AI agent needs money to work. How do you lend to it — safely?"
+        description="Autonomous agents already buy compute and place orders, but they can't sign a contract, post collateral, or be sued. Finora gives an agent a credit line it can use, and enforces the rules at the wallet layer — so a rogue agent is stopped by code, not trust. New here? Press play on the guided story below and watch it happen."
       >
         <div className="dark-scope rounded-3xl border border-border p-4 sm:p-8">
           <SimulationBadge />

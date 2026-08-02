@@ -3,6 +3,7 @@
 import { AlertTriangle, ShieldCheck, Timer } from "lucide-react";
 import { useFinoraState } from "@/lib/finora/FinoraProvider";
 import { computeBondRatio } from "@/lib/finora/scoring";
+import { AnimatedNumber, PulseDot } from "./motion";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -41,12 +42,13 @@ export function MaxLoss() {
           <AlertTriangle size={13} className="text-warning" /> If the agent turned rogue now
         </span>
         <span
-          className={`rounded-full border px-2 py-0.5 text-[9.5px] font-mono uppercase ${
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9.5px] font-mono uppercase ${
             state.frozen
               ? "border-danger/40 bg-danger/10 text-danger"
-              : "border-border bg-surface-2 text-muted"
+              : "border-accent/30 bg-accent/10 text-accent"
           }`}
         >
+          <PulseDot className={state.frozen ? "bg-danger" : "bg-accent"} />
           {state.frozen ? "frozen" : "live"}
         </span>
       </div>
@@ -54,11 +56,19 @@ export function MaxLoss() {
       <div className="flex items-end justify-between">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted">Max loss (value at risk)</div>
-          <div className="font-mono text-2xl font-semibold text-warning">{money(netMaxLoss)}</div>
+          <AnimatedNumber
+            value={netMaxLoss}
+            prefix="$"
+            className="font-mono text-2xl font-semibold text-warning"
+          />
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-wide text-muted">Contained</div>
-          <div className="font-mono text-lg font-semibold text-accent">{containedPct}%</div>
+          <AnimatedNumber
+            value={containedPct}
+            suffix="%"
+            className="font-mono text-lg font-semibold text-accent"
+          />
         </div>
       </div>
 
