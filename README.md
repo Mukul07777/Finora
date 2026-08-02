@@ -257,6 +257,4 @@ Every claim above, checked against what actually runs:
 
 Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Live") match this table.
 
-## License
 
-MIT
