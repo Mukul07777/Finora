@@ -59,7 +59,7 @@ export default function SecurityPage() {
       <Section
         eyebrow="Deployed, not just described"
         title="The contracts live on a public testnet"
-        description="Not an in-memory demo — the enforcement layer is deployed to Base Sepolia, verified, and inspectable. Click through to the source, state, and every transaction."
+        description="Not an in-memory demo — the enforcement layer is deployed to Ethereum Sepolia, verified, and inspectable. Click through to the source, state, and every transaction."
       >
         <div className="mx-auto max-w-3xl">
           <OnchainStatus />
@@ -189,7 +189,7 @@ export default function SecurityPage() {
 
           <p className="text-sm leading-relaxed text-muted">
             The demos below run on an in-memory Hardhat EVM and verify real Solidity behavior — they
-            require no deployment, funds, or network. A Base Sepolia deploy script ships in{" "}
+            require no deployment, funds, or network. An Ethereum Sepolia deploy script ships in{" "}
             <code className="font-mono text-foreground">onchain/scripts/deploy.ts</code>; the demos
             are kept in-memory so a judge can reproduce them in one command without a funded wallet.
           </p>
@@ -248,7 +248,7 @@ export default function SecurityPage() {
           </div>
 
           <p className="text-center text-xs text-muted">
-            Full output, deployment script, and Base Sepolia testnet instructions in{" "}
+            Full output, deployment script, and Ethereum Sepolia testnet instructions in{" "}
             <code className="font-mono text-foreground">onchain/README.md</code>.
           </p>
         </div>

@@ -1,17 +1,17 @@
 import { ExternalLink, CheckCircle2, CircleDashed } from "lucide-react";
 
 /**
- * Shows the live deployment status of each contract on Base Sepolia. Reads
- * the deployed addresses from env (set after `npm run deploy:baseSepolia`).
+ * Shows the live deployment status of each contract on Ethereum Sepolia. Reads
+ * the deployed addresses from env (set after `npm run deploy:sepolia`).
  * When an address is present it links straight to the verified contract on
- * Basescan — turning "enforced on-chain" from a claim into something a judge
+ * Etherscan — turning "enforced on-chain" from a claim into something a judge
  * can click and inspect: source, state, and every transaction.
  */
 
-// Defaults to Base Sepolia; set NEXT_PUBLIC_EXPLORER_URL to
-// "https://sepolia.etherscan.io/address/" if you deploy to Ethereum Sepolia.
-const EXPLORER = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://sepolia.basescan.org/address/";
-const NETWORK_NAME = process.env.NEXT_PUBLIC_NETWORK_NAME || "Base Sepolia";
+// Defaults to Ethereum Sepolia; override NEXT_PUBLIC_EXPLORER_URL /
+// NEXT_PUBLIC_NETWORK_NAME if you redeploy to a different network.
+const EXPLORER = process.env.NEXT_PUBLIC_EXPLORER_URL || "https://sepolia.etherscan.io/address/";
+const NETWORK_NAME = process.env.NEXT_PUBLIC_NETWORK_NAME || "Ethereum Sepolia";
 
 const CONTRACTS = [
   { name: "AgentWallet.sol", env: process.env.NEXT_PUBLIC_AGENT_WALLET_ADDRESS, desc: "Spend caps, allowlist, kill switch, in-flight revocation, grants" },
@@ -72,9 +72,9 @@ export function OnchainStatus() {
 
       {!anyDeployed && (
         <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          Run <code className="font-mono text-foreground">cd onchain &amp;&amp; npm run deploy:baseSepolia</code>,
+          Run <code className="font-mono text-foreground">cd onchain &amp;&amp; npm run deploy:sepolia</code>,
           then add the printed addresses to <code className="font-mono text-foreground">.env.local</code> — this
-          panel lights up with live Basescan links automatically.
+          panel lights up with live Etherscan links automatically.
         </p>
       )}
     </div>
