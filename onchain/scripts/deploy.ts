@@ -12,10 +12,16 @@ import { ethers, network } from "hardhat";
 async function main() {
   const [deployer, fallbackAgent, fallbackVendor] = await ethers.getSigners();
 
-  const agentAddress = process.env.AGENT_ADDRESS || fallbackAgent?.address;
-  if (!agentAddress) {
-    throw new Error("No agent address available — set AGENT_ADDRESS in .env for live networks.");
+  if (!deployer) {
+    throw new Error(
+      "No deployer account found. Set DEPLOYER_PRIVATE_KEY (a funded Base Sepolia burner key) in onchain/.env or the project's .env.local, then re-run."
+    );
   }
+
+  // On a live network there's only the deployer signer, so fall back to the
+  // deployer's own address for the agent session key (fine for a demo — the
+  // owner can call setAgent() later to rotate it to a dedicated key).
+  const agentAddress = process.env.AGENT_ADDRESS || fallbackAgent?.address || deployer.address;
 
   const perTxLimit = ethers.parseEther("0.05");
   const dailyLimit = ethers.parseEther("0.2");

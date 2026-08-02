@@ -1,22 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { AgentPassport } from "./AgentPassport";
 import { CreditPanel } from "./CreditPanel";
 import { WalletPanel } from "./WalletPanel";
 import { TxFeed } from "./TxFeed";
 import { KillSwitchCard } from "./KillSwitchCard";
 import { PolicyPanel } from "./PolicyPanel";
-import { AgentAutopilot } from "./AgentAutopilot";
-import { MoneyFlow } from "./MoneyFlow";
-import { UnderwritingCard } from "./UnderwritingCard";
 import { PolicyCompiler } from "./PolicyCompiler";
-import { MaxLoss } from "./MaxLoss";
+import { AgentAutopilot } from "./AgentAutopilot";
 import { AgentAvatar } from "./AgentAvatar";
-import { CollusionCard } from "./CollusionCard";
 import { StoryMode } from "./StoryMode";
-import { AlertBanner } from "./AlertBanner";
 import { MotionCard } from "./motion";
+import { AlertBanner } from "./AlertBanner";
 import { AlertMsg } from "./types";
 import { useFinoraActions, useFinoraState } from "@/lib/finora/FinoraProvider";
 import { ALLOWLIST } from "@/lib/finora/types";
@@ -26,10 +24,6 @@ export function Console() {
   const actions = useFinoraActions();
   const [alert, setAlert] = useState<AlertMsg | null>(null);
 
-  // Surfaces the most recent shared notification as a self-dismissing
-  // banner. Deliberately an effect, not a render-time derivation: it
-  // schedules a real timeout to auto-dismiss, which can't happen during
-  // render.
   useEffect(() => {
     const latest = state.notifications[0];
     if (!latest) return;
@@ -46,7 +40,6 @@ export function Console() {
 
   return (
     <div className="relative">
-      {/* ambient, slow-drifting color wash behind the whole console */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
           className="orb animate-float-slow -left-20 top-10 h-72 w-72 opacity-30"
@@ -55,10 +48,6 @@ export function Console() {
         <div
           className="orb animate-float-slower right-0 top-40 h-80 w-80 opacity-25"
           style={{ background: "radial-gradient(circle, rgba(110,168,255,0.18), transparent 70%)" }}
-        />
-        <div
-          className="orb animate-float-slow left-1/2 bottom-0 h-64 w-64 opacity-20"
-          style={{ background: "radial-gradient(circle, rgba(167,139,250,0.18), transparent 70%)" }}
         />
       </div>
 
@@ -70,26 +59,20 @@ export function Console() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
-          <ColumnLabel n="1" title="Who is this agent?" hint="Identity, reputation, and the emergency brake." />
+          <ColumnLabel n="1" title="The agent" hint="Who it is, and the emergency brake." />
           <MotionCard delay={0.02}>
             <AgentPassport frozen={state.frozen} score={state.score} tier={tier} />
           </MotionCard>
           <MotionCard delay={0.08}>
-            <UnderwritingCard />
+            <AgentAvatar />
           </MotionCard>
           <MotionCard delay={0.14}>
-            <AgentAutopilot />
-          </MotionCard>
-          <MotionCard delay={0.2}>
             <KillSwitchCard frozen={state.frozen} onToggle={actions.toggleFreeze} />
-          </MotionCard>
-          <MotionCard delay={0.26}>
-            <MaxLoss />
           </MotionCard>
         </div>
 
         <div className="space-y-6 lg:col-span-1">
-          <ColumnLabel n="2" title="Give it credit — and rules" hint="Underwrite, spend, and set policy in plain English." />
+          <ColumnLabel n="2" title="Credit & control" hint="Underwrite, spend, and set policy." />
           <MotionCard delay={0.05}>
             <CreditPanel
               status={state.creditStatus}
@@ -122,23 +105,28 @@ export function Console() {
         </div>
 
         <div className="space-y-6 lg:col-span-1">
-          <ColumnLabel n="3" title="Proof it's safe" hint="Live agent, activity, and fraud detection." />
+          <ColumnLabel n="3" title="Activity" hint="Every attempt, allowed or blocked, in real time." />
           <MotionCard delay={0.08}>
-            <AgentAvatar />
+            <AgentAutopilot />
           </MotionCard>
           <MotionCard delay={0.14}>
             <TxFeed txs={state.txs} />
           </MotionCard>
-          <MotionCard delay={0.2}>
-            <CollusionCard />
-          </MotionCard>
         </div>
       </div>
 
-      <div className="mt-6">
-        <MotionCard delay={0.1}>
-          <MoneyFlow />
-        </MotionCard>
+      {/* cross-links to the dedicated pages */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <PageLink
+          href="/flow"
+          title="Money Map"
+          body="See where capital flows and why borrowing pays — repayment skimmed at source."
+        />
+        <PageLink
+          href="/network"
+          title="Reputation & Fraud"
+          body="How the score is underwritten, and how wash-trading rings get caught."
+        />
       </div>
     </div>
   );
@@ -155,5 +143,20 @@ function ColumnLabel({ n, title, hint }: { n: string; title: string; hint: strin
         <p className="text-[11px] leading-snug text-muted">{hint}</p>
       </div>
     </div>
+  );
+}
+
+function PageLink({ href, title, body }: { href: string; title: string; body: string }) {
+  return (
+    <Link
+      href={href}
+      className="card-premium group flex items-center justify-between gap-4 rounded-2xl p-5 transition-transform hover:scale-[1.01]"
+    >
+      <div>
+        <h3 className="font-display text-sm font-semibold text-foreground">{title}</h3>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{body}</p>
+      </div>
+      <ArrowRight size={18} className="shrink-0 text-accent transition-transform group-hover:translate-x-1" />
+    </Link>
   );
 }

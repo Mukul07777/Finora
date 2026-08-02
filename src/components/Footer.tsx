@@ -6,9 +6,11 @@ const COLUMNS = [
     title: "Product",
     links: [
       { label: "Live Console", href: "/console" },
+      { label: "Money Map", href: "/flow" },
+      { label: "Reputation & Fraud", href: "/network" },
       { label: "Security", href: "/security" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Docs", href: "/docs" },
+      { label: "API", href: "/docs" },
     ],
   },
   {

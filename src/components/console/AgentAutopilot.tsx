@@ -42,6 +42,7 @@ export function AgentAutopilot() {
   const [error, setError] = useState<string | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [actionsTaken, setActionsTaken] = useState(0);
+  const [provider, setProvider] = useState<"lyzr" | "groq" | null>(null);
 
   const stateRef = useRef(state);
   useEffect(() => {
@@ -100,6 +101,7 @@ export function AgentAutopilot() {
           return;
         }
 
+        if (body.provider === "lyzr" || body.provider === "groq") setProvider(body.provider);
         const decision: AutopilotDecision = body.decision;
         setLog((prev) =>
           [
@@ -154,7 +156,7 @@ export function AgentAutopilot() {
           Agent Autopilot
         </span>
         <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted">
-          <Bot size={13} /> Groq LLM
+          <Bot size={13} /> {provider === "lyzr" ? "Lyzr Agent" : provider === "groq" ? "Groq LLM" : "AI agent"}
         </span>
       </div>
 

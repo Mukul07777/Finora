@@ -212,14 +212,14 @@ Every claim above, checked against what actually runs:
 | Console/phone credit, spend, kill-switch flows | **Simulated** | In-browser React state (`FinoraProvider`), no blockchain call. Labeled "Simulation Mode" in the UI |
 | Payment lifecycle in the console | **Simulated, but modeled on the real thing** | Payments genuinely go `pending` → settled, mirroring `proposePayment()`/`executePayment()`. Freezing mid-payment really cancels that exact pending transaction — no funds move — the same in-flight revocation proven on-chain, reproduced in the simulated state machine |
 | "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |
-| REST API (`/docs`) | **Not live** | Describes the planned API shape; `api.finora.dev` does not resolve |
+| REST API (`/api/v1/*`) | **Live** | Real Next.js route handlers backed by Supabase: `/agents`, `/agents/:id`, `/credit/terms`, `/payments`, `/risk/collusion`, `/policy/compile`. Try them on `/docs` with the Run button |
 | Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable — see `onchain/README.md` for how to deploy it |
 | Starting reputation score | **Seeded** | Every session starts at score 82 — a bootstrap value, since there's no real history yet |
 | Credit limit / APR | **Computed** | `computeCreditTerms(score)` — a real formula, recalculated live whenever score changes (job completions, rogue attempts), not fixed once at approval |
 | The "agent" | **Scripted by default; real LLM in opt-in Autopilot** | `/console` has an "Agent Autopilot" toggle — a Groq model genuinely decides the next action (request credit / spend / repay / wait) every few seconds via `/api/agent/decide`. Its decisions go through the exact same policy checks as a human clicking the buttons. Off by default; needs `GROQ_API_KEY` |
 | Anomaly / velocity risk | **Heuristic, computed** | `computeVelocityRisk()` derives a risk value from this session's actual transaction timestamps (more recent activity → higher risk) — hand-tuned, not a trained model, but not a fixed number either |
 
-Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Planned API — Not Currently Live") match this table.
+Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Live") match this table.
 
 ## License
 

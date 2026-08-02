@@ -4,6 +4,7 @@ import { Metrics } from "@/components/Metrics";
 import { Architecture } from "@/components/Architecture";
 import { CTA } from "@/components/CTA";
 import { ShieldCheck, Lock, Radio, GitBranch, Coins } from "lucide-react";
+import { OnchainStatus } from "@/components/OnchainStatus";
 
 export const metadata: Metadata = {
   title: "Security & Trust — Finora",
@@ -52,6 +53,16 @@ export default function SecurityPage() {
               <p className="mt-2 text-[13px] leading-relaxed text-muted">{t.body}</p>
             </div>
           ))}
+        </div>
+      </Section>
+
+      <Section
+        eyebrow="Deployed, not just described"
+        title="The contracts live on a public testnet"
+        description="Not an in-memory demo — the enforcement layer is deployed to Base Sepolia, verified, and inspectable. Click through to the source, state, and every transaction."
+      >
+        <div className="mx-auto max-w-3xl">
+          <OnchainStatus />
         </div>
       </Section>
 

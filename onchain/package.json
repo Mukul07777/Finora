@@ -9,6 +9,7 @@
     "node": "hardhat node",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "demo:attack": "hardhat run scripts/attackAgent.ts",
     "demo:redteam": "hardhat run scripts/redTeam.ts",
     "demo:peer": "hardhat run scripts/peerCredit.ts"

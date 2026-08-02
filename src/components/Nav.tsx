@@ -10,9 +10,11 @@ import { Logo } from "./Logo";
 
 const LINKS = [
   { href: "/console", label: "Live Console" },
+  { href: "/flow", label: "Money Map" },
+  { href: "/network", label: "Reputation" },
   { href: "/security", label: "Security" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/docs", label: "Docs" },
+  { href: "/docs", label: "API" },
   { href: "/about", label: "About" },
 ];
 

@@ -20,19 +20,31 @@ Respond with strict JSON only — no markdown, no code fences, no commentary out
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { ok: false, error: "GROQ_API_KEY is not configured on the server (.env.local)." },
-      { status: 200 }
-    );
-  }
-
   let snapshot: AutopilotSnapshot;
   try {
     snapshot = await request.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid request body." }, { status: 400 });
+  }
+
+  // Prefer a real Lyzr agent when configured — the autonomous agent whose
+  // spending Finora governs is itself an agentic-AI agent built on Lyzr.
+  // Its decision still flows through the identical policy path a human click
+  // would, so Lyzr can't bypass any enforcement.
+  const lyzrKey = process.env.LYZR_API_KEY;
+  const lyzrAgent = process.env.LYZR_AGENT_ID;
+  if (lyzrKey && lyzrAgent) {
+    const decision = await decideWithLyzr(snapshot, lyzrKey, lyzrAgent);
+    if (decision) return NextResponse.json({ ok: true, provider: "lyzr", decision });
+    // fall through to Groq if Lyzr errors
+  }
+
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { ok: false, error: "No agent provider configured. Set LYZR_API_KEY + LYZR_AGENT_ID, or GROQ_API_KEY, in .env.local." },
+      { status: 200 }
+    );
   }
 
   try {
@@ -75,10 +87,46 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, decision: parsed });
+    return NextResponse.json({ ok: true, provider: "groq", decision: parsed });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ ok: false, error: `Request to Groq failed: ${message}` }, { status: 200 });
+  }
+}
+
+/**
+ * Calls a Lyzr Studio agent to decide the autonomous agent's next move.
+ * Returns null on any error so the caller can fall back to Groq.
+ */
+async function decideWithLyzr(
+  snapshot: AutopilotSnapshot,
+  apiKey: string,
+  agentId: string
+): Promise<AutopilotDecision | null> {
+  const url = process.env.LYZR_API_URL || "https://agent-prod.studio.lyzr.ai/v3/inference/chat/";
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+      body: JSON.stringify({
+        user_id: process.env.LYZR_USER_ID || "finora-demo",
+        agent_id: agentId,
+        session_id: `finora-${agentId}`,
+        message:
+          `You are agent.procure-01, an autonomous procurement agent managing a Finora credit line. ` +
+          `Given this state, choose exactly ONE next action and reply with strict JSON only: ` +
+          `{"action":"requestCredit"|"sendPayment"|"completeJob"|"wait","reasoning":"<20 words"}. ` +
+          `State: ${JSON.stringify(snapshot)}`,
+      }),
+    });
+    if (!res.ok) return null;
+    const payload = await res.json();
+    const content: string | undefined =
+      payload?.response ?? payload?.message ?? payload?.choices?.[0]?.message?.content;
+    if (!content) return null;
+    return parseDecision(content);
+  } catch {
+    return null;
   }
 }
 
