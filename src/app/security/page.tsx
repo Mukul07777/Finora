@@ -6,6 +6,7 @@ import { CTA } from "@/components/CTA";
 import { ShieldCheck, Lock, Radio, GitBranch, Coins } from "lucide-react";
 import { OnchainStatus } from "@/components/OnchainStatus";
 import { LiveOnchainState } from "@/components/LiveOnchainState";
+import { LiveTransactionProof } from "@/components/LiveTransactionProof";
 
 export const metadata: Metadata = {
   title: "Security & Trust — Finora",
@@ -248,6 +249,8 @@ export default function SecurityPage() {
             reason: reverted with custom error 'AgentExpired()'`}
             </pre>
           </div>
+
+          <LiveTransactionProof />
 
           <p className="text-center text-xs text-muted">
             Full output, deployment script, and Ethereum Sepolia testnet instructions in{" "}
