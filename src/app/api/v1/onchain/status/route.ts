@@ -50,7 +50,7 @@ export async function GET() {
       wallet.dailyLimit(),
     ]);
 
-    const score = await registry.scoreOf(agent).catch(() => 0n);
+    const score = await registry.scoreOf(agent).catch(() => BigInt(0));
 
     const [open, baseLimit, aprBps, drawn, bond, poolBalance] = await Promise.all([
       creditLine.open(),
