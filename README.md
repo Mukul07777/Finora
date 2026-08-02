@@ -10,11 +10,17 @@ Verifiable identity · real-time reputation · dynamically underwritten credit �
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white)](https://soliditylang.org)
 [![Hardhat](https://img.shields.io/badge/Hardhat-tests%2067%2F67-FFF04D?logo=hardhat&logoColor=black)](onchain)
+[![Sepolia](https://img.shields.io/badge/Sepolia-deployed-3ECF8E?logo=ethereum&logoColor=white)](#deployed-contracts)
+[![Lyzr](https://img.shields.io/badge/Agent-Lyzr%20Studio-6C5CE7)](#the-agent-lyzr-studio)
 [![License](https://img.shields.io/badge/license-MIT-informational)](#license)
 
-Built for **Innova Hack Chapter-1**, Domain 1 — Fintech.
+Built by **Team CityZen** · Leader **Mukul** · for **InnovaHack Chapter-1**, Domain 1 — Fintech, PS-1: *Credit for Autonomous Agents*.
 
 </div>
+
+---
+
+**[The problem](#the-problem)** · **[Deployed contracts](#deployed-contracts)** · **[Preview](#preview)** · **[What's real here](#whats-real-here)** · **[Try it](#try-it--the-fastest-path-through-it)** · **[How it works](#how-it-works)** · **[Features](#feature-highlights)** · **[Tech stack](#tech-stack)** · **[The Lyzr agent](#the-agent-lyzr-studio)** · **[Real vs. simulated](#real-vs-simulated)** · **[Getting started](#getting-started)**
 
 ---
 
@@ -30,6 +36,19 @@ That breaks two things at once:
 | **No leash, no control** | Once an agent holds a wallet, "be careful" isn't a control — most spend limits live inside the agent's own logic, which a compromised or overzealous agent can simply ignore. |
 
 Finora is the layer underneath both problems: identity and reputation to make credit possible, and policy enforcement that lives **outside** the agent's own reasoning to make that credit safe.
+
+## Deployed contracts
+
+Not a diagram — live on Ethereum Sepolia today:
+
+| Contract | Address |
+|---|---|
+| `AgentWallet.sol` | [`0x45F1c7E023AA9E976cc38FA5FE7345f51BaB9103`](https://sepolia.etherscan.io/address/0x45F1c7E023AA9E976cc38FA5FE7345f51BaB9103) |
+| `ReputationRegistry.sol` | [`0xe0F0Ab84f98068cBAC8375d28563d1f0E013c7e7`](https://sepolia.etherscan.io/address/0xe0F0Ab84f98068cBAC8375d28563d1f0E013c7e7) |
+| `CreditLine.sol` | [`0x8Ee810D9d5bCd161dA58f18F4fe48e1f87c758cC`](https://sepolia.etherscan.io/address/0x8Ee810D9d5bCd161dA58f18F4fe48e1f87c758cC) |
+| `SettlementEscrow.sol` | [`0x10Cb2279d0742f375434f7cbfce317c41FFe98f4`](https://sepolia.etherscan.io/address/0x10Cb2279d0742f375434f7cbfce317c41FFe98f4) |
+
+Redeploy your own copy with `cd onchain && npm run deploy:sepolia` — see [`onchain/README.md`](onchain/README.md).
 
 ## Preview
 
@@ -110,7 +129,7 @@ The same policy object that decides how much an agent can borrow is the one that
 - **Live owner policy controls** — the per-transaction cap is adjustable in real time from either surface (console or phone), enforced on the agent's very next payment attempt — the same rule as `perTxLimit` in `AgentWallet.sol`, not fixed at deployment
 - **Instant kill switch** — one owner action freezes the agent, including in-flight, multi-step transactions
 - **Repayment skimmed at source** — task revenue routes through `CreditLine.sol` and outstanding debt is deducted before the agent can withdraw; default slashes a reputation-scaled bond
-- **Agent Autopilot (optional)** — a real LLM (Groq) can drive the agent's decisions instead of a human clicking buttons, through the same policy path — see [Real LLM agent](#real-llm-agent-optional) below
+- **Agent Autopilot (optional)** — a real **Lyzr Studio** agent (Groq as fallback) can drive the agent's decisions instead of a human clicking buttons, through the same policy path — see [The agent: Lyzr Studio](#the-agent-lyzr-studio) below
 
 ## Tech stack
 
@@ -119,7 +138,7 @@ The same policy object that decides how much an agent can borrow is the one that
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Framer Motion |
 | Shared state | `FinoraProvider` — a `useReducer` store with a pure reducer + async action coordinator, single source of truth for the console and phone demos |
 | Backend seam | `FinoraAdapter` interface, currently backed by `simulationAdapter` (timers + randomness). Swappable for a future on-chain adapter without touching the reducer or any component |
-| Optional LLM agent | Groq (`llama-3.1-8b-instant` by default), called server-side only from `app/api/agent/decide` |
+| Optional agent | **Lyzr Studio** (primary), Groq `llama-3.1-8b-instant` (fallback) — called server-side only from `app/api/agent/decide`, never exposed to the client |
 | Enforcement contract | Solidity 0.8.26, Hardhat, ethers v6, TypeChain — AgentWallet, CreditLine, ReputationRegistry |
 | Testing | Mocha/Chai via Hardhat (67 tests), Vitest (reducer unit tests), `tsc --noEmit`, `next build` |
 
@@ -130,18 +149,22 @@ Finora/
 ├─ src/
 │  ├─ app/                 routes: /, /console, /security, /pricing, /docs, /about
 │  ├─ lib/finora/          shared agent state: pure reducer + FinoraProvider + FinoraAdapter (+ Vitest tests)
-│  ├─ app/api/agent/decide/ server route that calls Groq — the only place the API key is used
+│  ├─ app/api/agent/decide/ server route that calls Lyzr (primary) or Groq (fallback) — the only place either key is used
 │  └─ components/
 │     ├─ console/          Console (desktop) & PhoneApp (mobile) — two views of one FinoraProvider
 │     │                     (includes AgentAutopilot.tsx — the optional LLM-driven mode)
 │     └─ ui/                shared layout primitives
 ├─ onchain/
-│  ├─ contracts/AgentWallet.sol
-│  ├─ test/AgentWallet.test.ts       58 tests across AgentWallet, CreditLine & ReputationRegistry: ownership, limits, allowlist, kill switch, in-flight revocation, reentrancy, EIP-712 grants, guardians, dead-man switch, enforced repayment, slashable bond
+│  ├─ contracts/            AgentWallet, CreditLine, ReputationRegistry, SettlementEscrow
+│  ├─ test/                 67 tests: ownership, limits, allowlist, kill switch, in-flight revocation, reentrancy, EIP-712 grants, guardians, dead-man switch, enforced repayment, slashable bond
 │  └─ scripts/
-│     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit
-│     └─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
+│     ├─ deploy.ts          deploy + seed a demo policy/allowlist/deposit (local or `deploy:sepolia`)
+│     ├─ attackAgent.ts     scripted attack agent vs. the contract, live reverts
+│     ├─ redTeam.ts         enforced repayment, EIP-712 grants, guardians, dead-man switch
+│     └─ peerCredit.ts      agent-to-agent peer-backed credit (cold-start solved)
 ├─ docs/screenshots/
+├─ LYZR_SETUP.md            step-by-step: create the Lyzr agent, wire the keys, verify the badge
+├─ Finora_CityZen.pptx      submission deck — Team CityZen, PS-1 walkthrough
 └─ run.bat                 Windows one-click: installs deps, starts the dev server, opens the browser
 ```
 
@@ -172,32 +195,45 @@ npm test              # 67 passing
 npm run demo:attack   # scripted attack agent, live EVM reverts
 ```
 
-Deploying to a public testnet (Base Sepolia) needs a funded burner wallet — see [`onchain/README.md`](onchain/README.md).
+Already deployed to Ethereum Sepolia — see [Deployed contracts](#deployed-contracts). Deploying your own copy needs a funded burner wallet — see [`onchain/README.md`](onchain/README.md).
 
-## Real LLM agent (optional)
+## The agent: Lyzr Studio
 
 `/console` has an **Agent Autopilot** toggle. Turned on, it stops waiting for you to click
-buttons — a real model decides the agent's next move (request credit, spend, repay, or wait)
-every few seconds, with its one-sentence reasoning shown live. It calls a server route, never
-the browser directly, so the API key never reaches the client:
+buttons — a real agent decides the agent's next move (request credit, spend, repay, or wait)
+every few seconds, with its one-sentence reasoning shown live.
+
+The agent making those decisions is built on **[Lyzr](https://studio.lyzr.ai)**. `agent.procure-01`
+is a Lyzr Studio agent whose entire job is to manage a short-term credit line responsibly —
+borrow when it needs working capital, spend against an allowlisted vendor, repay from task
+revenue, or wait. It calls a server route, never the browser directly, so no key ever reaches
+the client:
 
 ```bash
 cp .env.example .env.local
 # then edit .env.local:
-GROQ_API_KEY=your_key_here   # free key: https://console.groq.com/keys
+LYZR_API_KEY=your_key_here     # studio.lyzr.ai → Account → API Key
+LYZR_AGENT_ID=your_agent_id    # the agent you create in Lyzr Studio, config in LYZR_SETUP.md
 ```
 
-Restart `npm run dev` after adding the key. Two things worth knowing:
+No Lyzr key configured? Autopilot falls back automatically to Groq (`GROQ_API_KEY`,
+`llama-3.1-8b-instant`) so the demo never breaks. The console badge tells you which one is
+live — **Lyzr Agent** or **Groq LLM** — so it's never ambiguous which model is driving.
+Full agent setup, including the exact system prompt, is in [`LYZR_SETUP.md`](LYZR_SETUP.md).
+
+Two things worth knowing, true for either provider:
 
 - **The model decides; it does not enforce.** Every action it picks goes through the identical
   `FinoraProvider` action path a human click would — request credit still checks
   `creditStatus === "idle"`, a payment still gets policy-checked and can still be blocked or
-  frozen mid-flight. Autopilot can't bypass anything a human couldn't.
+  frozen mid-flight. Autopilot — Lyzr or Groq — can't bypass anything a human couldn't. Try it:
+  freeze the wallet while the agent is mid-run and watch its next `sendPayment` attempt get
+  rejected at the policy layer, not politely declined by the model.
 - **Capped by design.** Stops itself after 12 actions per session (`AUTOPILOT_MAX_ACTIONS` in
   `src/lib/finora/autopilot.ts`) so a forgotten toggle doesn't run up API usage.
 
-Without a key configured, the toggle still renders — clicking it shows a clear inline message
-instead of failing silently or crashing the page.
+Without either key configured, the toggle still renders — clicking it shows a clear inline
+message instead of failing silently or crashing the page.
 
 ## Real vs. simulated
 
@@ -213,10 +249,10 @@ Every claim above, checked against what actually runs:
 | Payment lifecycle in the console | **Simulated, but modeled on the real thing** | Payments genuinely go `pending` → settled, mirroring `proposePayment()`/`executePayment()`. Freezing mid-payment really cancels that exact pending transaction — no funds move — the same in-flight revocation proven on-chain, reproduced in the simulated state machine |
 | "96% predicted repayment" style stats | **Removed** | Were unbacked marketing numbers; the hero now states capabilities, not invented metrics |
 | REST API (`/api/v1/*`) | **Live** | Real Next.js route handlers backed by Supabase: `/agents`, `/agents/:id`, `/credit/terms`, `/payments`, `/risk/collusion`, `/policy/compile`. Try them on `/docs` with the Run button |
-| Public testnet deployment | **Not deployed** | Deliberate choice, to keep the demo reliable — see `onchain/README.md` for how to deploy it |
+| Public testnet deployment | **Live** | All four contracts deployed to Ethereum Sepolia — see [Deployed contracts](#deployed-contracts) for addresses, or redeploy your own with `npm run deploy:sepolia` |
 | Starting reputation score | **Seeded** | Every session starts at score 82 — a bootstrap value, since there's no real history yet |
 | Credit limit / APR | **Computed** | `computeCreditTerms(score)` — a real formula, recalculated live whenever score changes (job completions, rogue attempts), not fixed once at approval |
-| The "agent" | **Scripted by default; real LLM in opt-in Autopilot** | `/console` has an "Agent Autopilot" toggle — a Groq model genuinely decides the next action (request credit / spend / repay / wait) every few seconds via `/api/agent/decide`. Its decisions go through the exact same policy checks as a human clicking the buttons. Off by default; needs `GROQ_API_KEY` |
+| The "agent" | **Scripted by default; real agent in opt-in Autopilot** | `/console` has an "Agent Autopilot" toggle — a **Lyzr Studio agent** (or Groq, as fallback) genuinely decides the next action (request credit / spend / repay / wait) every few seconds via `/api/agent/decide`. Its decisions go through the exact same policy checks as a human clicking the buttons. Off by default; needs `LYZR_API_KEY` + `LYZR_AGENT_ID`, or `GROQ_API_KEY` |
 | Anomaly / velocity risk | **Heuristic, computed** | `computeVelocityRisk()` derives a risk value from this session's actual transaction timestamps (more recent activity → higher risk) — hand-tuned, not a trained model, but not a fixed number either |
 
 Nothing above is hidden behind polish — the labels in the product ("Simulation Mode," "Live") match this table.
