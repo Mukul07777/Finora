@@ -12,7 +12,8 @@
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "demo:attack": "hardhat run scripts/attackAgent.ts",
     "demo:redteam": "hardhat run scripts/redTeam.ts",
-    "demo:peer": "hardhat run scripts/peerCredit.ts"
+    "demo:peer": "hardhat run scripts/peerCredit.ts",
+    "demo:live": "hardhat run scripts/proveSepolia.ts --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

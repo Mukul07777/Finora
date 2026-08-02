@@ -10,6 +10,7 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "ethers": "^6.13.4",
     "framer-motion": "^12.43.0",
     "lucide-react": "^1.28.0",
     "next": "16.2.12",

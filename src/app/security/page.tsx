@@ -5,6 +5,7 @@ import { Architecture } from "@/components/Architecture";
 import { CTA } from "@/components/CTA";
 import { ShieldCheck, Lock, Radio, GitBranch, Coins } from "lucide-react";
 import { OnchainStatus } from "@/components/OnchainStatus";
+import { LiveOnchainState } from "@/components/LiveOnchainState";
 
 export const metadata: Metadata = {
   title: "Security & Trust — Finora",
@@ -61,8 +62,9 @@ export default function SecurityPage() {
         title="The contracts live on a public testnet"
         description="Not an in-memory demo — the enforcement layer is deployed to Ethereum Sepolia, verified, and inspectable. Click through to the source, state, and every transaction."
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
           <OnchainStatus />
+          <LiveOnchainState />
         </div>
       </Section>
 
